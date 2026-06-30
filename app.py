@@ -2,69 +2,69 @@ import streamlit as st
 import sqlite3
 import pandas as pd
 from streamlit_option_menu import option_menu
+import os
 
-st.set_page_config(layout="wide", page_title="GC ERP Profesional")
-
-# --- CSS PERSONALIZADO (ROJO CARMESÍ Y COBRE) ---
-st.markdown("""
-    <style>
+# Configuración Visual
+st.set_page_config(page_title="GC ERP Pro", layout="wide")
+st.markdown("""<style>
     .stApp {background-color: #fcfcfc;}
     section[data-testid="stSidebar"] {background-color: #fdf5f5; border-right: 2px solid #CD7F32;}
-    .css-1r6slb0 {color: #990000;}
-    div.stButton > button {background-color: #CD7F32; color: white; border-radius: 5px; width: 100%;}
-    div.stMetric {background-color: #ffffff; padding: 10px; border-left: 5px solid #990000;}
-    </style>
-    """, unsafe_allow_html=True)
+    .nav-link {color: #990000 !important;}
+    .nav-link-selected {background-color: #CD7F32 !important; color: white !important;}
+    div.stButton > button {background-color: #CD7F32; color: white; border-radius: 5px;}
+    </style>""", unsafe_allow_html=True)
 
-# Inicializar BD
+# Base de Datos
 conn = sqlite3.connect('gc_erp_pro.db', check_same_thread=False)
 c = conn.cursor()
-c.execute('''CREATE TABLE IF NOT EXISTS items (id INTEGER PRIMARY KEY, nombre TEXT, foto TEXT, p_detal REAL, p_mayor REAL, p_bulto REAL)''')
+c.execute('''CREATE TABLE IF NOT EXISTS items (id INTEGER PRIMARY KEY, nombre TEXT, p_detal REAL, p_mayor REAL, p_bulto REAL, foto TEXT)''')
+c.execute('''CREATE TABLE IF NOT EXISTS ventas (id INTEGER PRIMARY KEY, fecha DATE, prod TEXT, total REAL)''')
 conn.commit()
 
-# --- NAVEGACIÓN LATERAL ---
+# Menú Lateral
 with st.sidebar:
-    st.image("logo.png") # Asegúrate de tener este logo
-    selected = option_menu("GC ERP", ["Nueva Venta", "Inventario", "Reportes", "Configuración"], icons=['cart', 'box', 'graph-up', 'gear'])
+    selected = option_menu("GC ERP", ["Nueva Venta", "Inventario", "Dashboard"], icons=['cart', 'box', 'graph-up'])
 
-# --- MÓDULO DE VENTAS (REPLICA DE 425.jpg) ---
+# Módulo de Ventas (Punto de Venta)
 if selected == "Nueva Venta":
-    col_centro, col_der = st.columns([2, 1])
+    st.subheader("🛒 Punto de Venta")
+    items = pd.read_sql("SELECT * FROM items", conn)
     
+    col_centro, col_der = st.columns([2, 1])
     with col_centro:
-        st.subheader("🛒 Catálogo de Productos")
-        busqueda = st.text_input("🔍 Buscar producto...")
-        items = pd.read_sql("SELECT * FROM items", conn)
-        
-        # Grid de productos (Tarjetas)
-        cols = st.columns(3)
         for i, row in items.iterrows():
-            with cols[i % 3]:
-                st.markdown(f"**{row['nombre']}**")
-                st.write(f"💵 ${row['p_detal']}")
-                if st.button(f"Agregar", key=f"add_{i}"):
-                    st.session_state.canasta = row
-                    
+            st.write(f"**{row['nombre']}** - ${row['p_detal']}")
+            if st.button(f"Agregar {row['nombre']}", key=f"btn_{i}"):
+                st.session_state.cart = row
+    
     with col_der:
         st.subheader("🧺 Canasta")
-        if 'canasta' in st.session_state:
-            item = st.session_state.canasta
-            st.write(f"**{item['nombre']}**")
-            st.write(f"Total: ${item['p_detal']}")
-            if st.button("Confirmar Pedido"):
-                st.success("Venta procesada.")
+        if 'cart' in st.session_state:
+            st.write(f"Producto: {st.session_state.cart['nombre']}")
+            st.write(f"Total: ${st.session_state.cart['p_detal']}")
+            if st.button("Confirmar Venta"):
+                c.execute("INSERT INTO ventas (fecha, prod, total) VALUES (DATE('now'),?,?)", 
+                          (st.session_state.cart['nombre'], st.session_state.cart['p_detal']))
+                conn.commit()
+                st.success("Venta procesada!")
         else:
-            st.info("La canasta está vacía")
+            st.info("Canasta vacía")
 
-# --- MÓDULO DE INVENTARIO ---
+# Módulo Inventario
 elif selected == "Inventario":
     st.subheader("📦 Carga de Inventario")
     with st.form("carga"):
-        nombre = st.text_input("Nombre")
+        nom = st.text_input("Nombre")
         p_d = st.number_input("Precio Detal")
         p_m = st.number_input("Precio Mayor")
         p_b = st.number_input("Precio Bulto")
         if st.form_submit_button("Guardar"):
-            c.execute("INSERT INTO items (nombre, p_detal, p_mayor, p_bulto) VALUES (?,?,?,?)", (nombre, p_d, p_m, p_b))
+            c.execute("INSERT INTO items (nombre, p_detal, p_mayor, p_bulto) VALUES (?,?,?,?)", (nom, p_d, p_m, p_b))
             conn.commit()
             st.rerun()
+
+elif selected == "Dashboard":
+    st.title("📈 Métricas Gerenciales")
+    df = pd.read_sql("SELECT * FROM ventas", conn)
+    if not df.empty:
+        st.bar_chart(df.groupby('prod')['total'].sum())
