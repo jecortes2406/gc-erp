@@ -108,7 +108,7 @@ if menu == "📊 Dashboard":
         st.write("**Rendimiento por Vendedor (Ventas Mensuales)**")
         data_vendedores = {
             'Vendedor': ['Bolsas Surtidas', 'Choco Surtido', 'Trululu Aros', 'Gomas Menta', 'Lokiño Barra', 'Caramelo Choc'],
-            'Ventas (USD)': [550, 420, 610, 310, 240, 500]
+            'Ventas (USD)': [450, 320, 580, 210, 390, 490]
         }
         df_vend = pd.DataFrame(data_vendedores)
         st.bar_chart(data=df_vend, x='Vendedor', y='Ventas (USD)', color='#1b4f72')
@@ -155,7 +155,7 @@ if menu == "📊 Dashboard":
         conn.close()
         
         for idx, row in df_hueso.iterrows():
-            col_txt, col_btn = st.columns([2, 1])
+            col_txt, col_btn = st.columns([3, 1])
             with col_txt:
                 st.write(f"📦 **{row['nombre']}**\nStock: {row['stock']} | Días: {row['dias_stock']}")
             with col_btn:
