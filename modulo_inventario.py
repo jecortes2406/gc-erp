@@ -1,47 +1,43 @@
 import streamlit as st
+import pandas as pd
 
 def mostrar_formulario_inventario():
-    # DASHBOARD DE INVENTARIO
-    st.markdown("## 📈 DASHBOARD DE INVENTARIO")
+    # Estilo CSS para imitar la interfaz corporativa
+    st.markdown("""
+        <style>
+        .metric-card { background-color: #f8f9fa; padding: 20px; border-radius: 10px; border-left: 5px solid #2e86c1; }
+        </style>
+    """, unsafe_allow_html=True)
+
+    # CABECERA Y MÉTRICAS (KPIs)
+    st.markdown("## 🏢 INVENTARIO MAESTRO")
+    st.markdown("### Auditoría Profesional de Almacén")
     
-    # 1. KPIs DE MEDICIÓN (Métricas de Punta)
-    k1, k2, k3, k4 = st.columns(4)
-    k1.metric("Inversión Total", "$0.00")
-    k2.metric("Ganancia Proyectada", "$0.00")
-    k3.metric("Gastos Acumulados", "$0.00")
-    k4.metric("Almacenes", "Principal")
-    
+    col1, col2, col3, col4 = st.columns(4)
+    # Aquí usarás los cálculos reales de tu base de datos
+    col1.metric("Valor Venta Total", "$432.00", "+5%")
+    col2.metric("Stock Bajo Mínimo", "0", delta_color="inverse")
+    col3.metric("Unidades en Almacén", "840", "Unidades")
+    col4.metric("Inversión en Stock", "$345.60")
+
     st.markdown("---")
-    
-    # 2. ACCIÓN PRINCIPAL
-    if st.button("＋ AGREGAR NUEVO PRODUCTO"):
+
+    # BARRA DE HERRAMIENTAS Y ACCIONES
+    t1, t2 = st.columns([0.7, 0.3])
+    t1.text_input("🔍 Escanear o Escribir Producto...", key="search")
+    if t2.button("＋ Crear Producto", type="primary"):
         st.session_state.modo_ingreso = True
         st.rerun()
 
-    # 3. LISTADO MAESTRO
-    st.subheader("Listado de Existencias")
-    st.write("Aquí se visualizará la tabla profesional con todas las columnas descritas.")
-
-# Lógica del formulario (se activará con el botón)
-def renderizar_formulario():
-    with st.form("form_pro"):
-        st.subheader("Detalles del Producto")
-        # Filas estructuradas
-        c1, c2 = st.columns(2)
-        c1.text_input("Código SKU")
-        c2.text_input("Nombre del Producto")
-        
-        c3, c4 = st.columns(2)
-        c3.number_input("Costo Base", format="%.2f")
-        c4.selectbox("Moneda", ["USD", "USDT"])
-        
-        st.markdown("### Estrategia de Precios")
-        p1, p2, p3 = st.columns(3)
-        p1.number_input("Margen Detal (%)")
-        p2.number_input("Margen Bulto (%)")
-        p3.number_input("Margen Mayor (%)")
-        
-        st.markdown("### Gestión de Comisiones")
-        st.number_input("Porcentaje Comisión Vendedor (%)", min_value=0.0, max_value=100.0)
-        
-        st.form_submit_button("GUARDAR EN BASE DE DATOS")
+    # TABLA DE DATOS (Lista profesional)
+    st.markdown("### Listado de Existencias")
+    # Este dataframe debe venir de tu base de datos con los nombres de columnas mapeados
+    df_ejemplo = pd.DataFrame({
+        "SKU": ["41"],
+        "Producto/Clasificación": ["CALF - BRAZIL"],
+        "Categoría": ["TABACOS"],
+        "Precio ($)": ["$0.50"],
+        "Existencia": [60],
+        "Estado": ["ACTIVO"]
+    })
+    st.table(df_ejemplo)
