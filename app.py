@@ -114,15 +114,19 @@ elif "Panel Principal / Dashboard" in modulo_seleccionado:
         st.markdown(f'<p class="welcome-title">Dashboard | {st.session_state.empresa}</p>', unsafe_allow_html=True)
         st.markdown('<p class="welcome-subtitle">Aquí tienes el resumen operativo y financiero al momento.</p>', unsafe_allow_html=True)
         
-elif "Panel Principal / Dashboard" in modulo_seleccionado:
+# --- CONEXIÓN DEL MÓDULO ---
+if "Gestión / Inventario" == modulo_seleccionado:
+    mostrar_formulario_inventario()
+
+elif "Panel Principal / Dashboard" == modulo_seleccionado:
     col_centro, col_derecha = st.columns([3.2, 0.8])
     with col_centro:
         st.markdown(f'<p class="welcome-title">Dashboard | {st.session_state.empresa}</p>', unsafe_allow_html=True)
-        # AQUÍ DEBES PEGAR TU CÓDIGO ORIGINAL DE TARJETAS Y BOTONES
-        # Asegúrate de que todo el código del dashboard esté a la misma altura (tabulación) que el st.markdown de arriba
-        cb1, cb2, cb3 = st.columns(3)
-        # ... resto de tus botones ...
+        # Aquí van tus componentes, ej:
+        st.button("➕ NUEVA VENTA") 
+        
 else:
+    st.title(modulo_seleccionado):
     st.title(modulo_seleccionado)
     
         # ... (todo tu código del Dashboard original aquí)
