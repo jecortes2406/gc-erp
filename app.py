@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+import requests
 
 # =====================================================================
 # 1. CONFIGURACIÓN DE LA PÁGINA
@@ -16,10 +17,9 @@ st.set_page_config(
 # =====================================================================
 st.markdown("""
     <style>
-    /* Fondo general */
     .stApp { background-color: #F8FAFC; }
     
-    /* Contenedor de Tarjeta Blanca */
+    /* Contenedores de Tarjetas */
     .card-white {
         background-color: #FFFFFF;
         padding: 20px;
@@ -28,8 +28,6 @@ st.markdown("""
         margin-bottom: 15px;
         border: 1px solid #E2E8F0;
     }
-    
-    /* Contenedor de Tarjeta Oscura */
     .card-dark {
         background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%);
         color: #FFFFFF;
@@ -38,50 +36,86 @@ st.markdown("""
         margin-bottom: 15px;
     }
     
-    /* Tipografías internas de Tarjetas */
+    /* Fuentes */
     .card-title { font-size: 13px; font-weight: 700; color: #64748B; text-transform: uppercase; }
     .card-title-dark { font-size: 13px; font-weight: 700; color: #38BDF8; text-transform: uppercase; }
     .card-value { font-size: 28px; font-weight: 700; color: #1E293B; }
     .card-value-dark { font-size: 36px; font-weight: 700; color: #FFFFFF; }
     .welcome-title { font-size: 28px; font-weight: 700; color: #0F172A; }
     .welcome-subtitle { font-size: 14px; color: #64748B; margin-bottom: 20px; }
+    
+    /* Estilo lista para Tasas */
+    .tasa-item {
+        background-color: #FFFFFF;
+        padding: 10px 14px;
+        border-radius: 8px;
+        border: 1px solid #E2E8F0;
+        margin-bottom: 8px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .tasa-label { font-size: 12px; font-weight: 700; color: #475569; }
+    .tasa-value { font-size: 15px; font-weight: 700; color: #1E3A8A; }
     </style>
     """, unsafe_allow_html=True)
 
 # =====================================================================
-# 3. VALORES INICIALES DE LAS TASAS (Estados de Sesión)
+# 3. AUTOMATIZACIÓN: FUNCIÓN CONEXIÓN BCV EN VIVO (Capa 2)
 # =====================================================================
-if 'tasa_bcb_usd' not in st.session_state:
-    st.session_state.tasa_bcb_usd = 42.35
-if 'tasa_bcb_eur' not in st.session_state:
-    st.session_state.tasa_bcb_eur = 45.20
+@st.cache_data(ttl=3600)  # Guarda en memoria por 1 hora para máxima velocidad
+def obtener_tasas_bcv_reales():
+    """Consulta internet para traer las tasas oficiales de Venezuela en tiempo real"""
+    try:
+        # Usamos una API pública de referencia para el mercado cambiario venezolano
+        url = "https://ve.dispotech.workers.dev/"
+        respuesta = requests.get(url, timeout=10)
+        datos = respuesta.json()
+        
+        usd = float(datos['bcv']['usd'])
+        eur = float(datos['bcv']['eur'])
+        return usd, eur
+    except Exception:
+        # Valores de respaldo (Backup) por si internet o la API fallan momentáneamente
+        return 42.35, 45.20
+
+# Carga automática al abrir o refrescar el ERP
+tasa_usd_bcv, tasa_eur_bcv = obtener_tasas_bcv_reales()
+
+# Inicialización de variables en el sistema
+if 'tasa_bcb_usd' not in st.session_state or st.sidebar.button("🔄 Actualizar Tasas"):
+    st.session_state.tasa_bcb_usd = tasa_usd_bcv
+    st.session_state.tasa_bcb_eur = tasa_eur_bcv
+
 if 'tasa_binance' not in st.session_state:
     st.session_state.tasa_binance = 46.50
 
-# El cerebro de cálculo toma la tasa Binance como referencia máster interna
+# Sincronización de la Referencia Máster según Binance P2P
 st.session_state.referencia_master = st.session_state.tasa_binance
 
 # =====================================================================
-# 4. PANEL IZQUIERDO (Sidebar con Identidad Visual y Control Cambiario)
+# 4. PANEL IZQUIERDO: CONTROL CAMBIARIO EN LISTA VERTICAL
 # =====================================================================
-# Inyección automática del Logo de GC Grupo Comercial C.A.
-st.sidebar.image(
-    "https://images.prodia.xyz/89a9ab93-08eb-4cdb-bfc8-c1bf7a9d78b5.png", 
-    caption="GC Grupo Comercial C.A.",
-    use_container_width=True
-)
+st.sidebar.markdown("## ⚜️ GC")
+st.sidebar.markdown("### Grupo Comercial C.A.")
 st.sidebar.caption("Sistema Administrativo Integral v1.0")
 st.sidebar.markdown("---")
 
-# Módulo de Tasas en Vivo y Control Cambiario
 st.sidebar.markdown("### 🔄 CONTROL CAMBIARIO")
-col_t1, col_t2 = st.sidebar.columns(2)
-with col_t1:
-    st.metric(label="BCB USD", value=f"Bs. {st.session_state.tasa_bcb_usd:.2f}")
-with col_t2:
-    st.metric(label="BCB EUR", value=f"Bs. {st.session_state.tasa_bcb_eur:.2f}")
 
-# Entrada manual de la tasa Binance que recalcula la Referencia Máster instantáneamente
+# Estructura en lista vertical para las tasas BCV (Evita que el texto se corte)
+st.sidebar.markdown(f"""
+    <div class="tasa-item">
+        <span class="tasa-label">💵 BCV USD</span>
+        <span class="tasa-value">Bs. {st.session_state.tasa_bcb_usd:.2f}</span>
+    </div>
+    <div class="tasa-item">
+        <span class="tasa-label">💶 BCV EUR</span>
+        <span class="tasa-value">Bs. {st.session_state.tasa_bcb_eur:.2f}</span>
+    </div>
+""", unsafe_allow_html=True)
+
+# Entrada manual de Binance justo debajo de la lista
 nueva_tasa = st.sidebar.number_input(
     "Tasa Binance P2P (Manual):", 
     min_value=0.0, 
@@ -95,7 +129,7 @@ if nueva_tasa != st.session_state.tasa_binance:
 st.sidebar.info(f"*REFERENCIA MASTER:* Bs. {st.session_state.referencia_master:.2f}")
 st.sidebar.markdown("---")
 
-# Menú Completo de Operaciones
+# Menú de Operaciones
 modulos = [
     "📊 Panel Principal / Dashboard", "📦 Órdenes Online", "🧾 Crear Factura (POS)", 
     "📑 Facturas Emitidas", "📝 Cotizaciones", "💰 Control de Cajas", 
@@ -118,7 +152,7 @@ if modulo_seleccionado == "📊 Panel Principal / Dashboard":
         st.markdown('<p class="welcome-title">¡Buenos días, jecortes!</p>', unsafe_allow_html=True)
         st.markdown('<p class="welcome-subtitle">Aquí tienes el resumen operativo y financiero al momento.</p>', unsafe_allow_html=True)
         
-        # Fila de Botones de Acción Operativa Rápida
+        # Botones Rápidos
         cb1, cb2, cb3 = st.columns(3)
         cb1.button("➕ NUEVA VENTA", use_container_width=True)
         cb2.button("📄 COTIZAR", use_container_width=True)
@@ -126,7 +160,7 @@ if modulo_seleccionado == "📊 Panel Principal / Dashboard":
         
         st.markdown("<br>", unsafe_allow_html=True)
         
-        # Fila 1 de KPIs Finacieros
+        # KPIs Fila 1
         k_g, k_c, k_i = st.columns([1.6, 1.2, 1.2])
         with k_g:
             st.markdown(f'<div class="card-dark"><div class="card-title-dark">Utilidad Bruta (Mes)</div><div class="card-value-dark">$1,447.00</div><small style="color: #4ADE80;">📈 +12%</small></div>', unsafe_allow_html=True)
@@ -135,32 +169,27 @@ if modulo_seleccionado == "📊 Panel Principal / Dashboard":
         with k_i:
             st.markdown('<div class="card-white"><div class="card-title">Ingresos Hoy</div><div class="card-value">$0.00</div><small>Ayer: $0.00</small></div>', unsafe_allow_html=True)
 
-        # Fila 2 de KPIs
+        # KPIs Fila 2
         k1, k2, k3, k4 = st.columns(4)
         k1.markdown('<div class="card-white"><div class="card-title">Por Cobrar</div><div class="card-value">$0.00</div></div>', unsafe_allow_html=True)
         k2.markdown('<div class="card-white"><div class="card-title">Por Pagar</div><div class="card-value">$0.00</div></div>', unsafe_allow_html=True)
         k3.markdown('<div class="card-white"><div class="card-title">Ticket Medio</div><div class="card-value">$0.00</div></div>', unsafe_allow_html=True)
         k4.markdown('<div class="card-white"><div class="card-title" style="color:#EF4444;">Stock Crítico</div><div class="card-value">0</div></div>', unsafe_allow_html=True)
 
-        # Bloque Intermedio: Movimientos de Caja
+        # Monitoreo Inferior
         st.markdown('<div class="card-white"><div class="card-title">📉 Movimientos de Caja</div><p style="text-align: center; color: #94A3B8; padding: 15px 0;">SIN MOVIMIENTOS REGISTRADOS</p></div>', unsafe_allow_html=True)
         
-        # Fila de Reportes Inteligentes
         c_t1, c_t2 = st.columns(2)
         c_t1.markdown('<div class="card-white"><div class="card-title">🔵 Top Tienda Física</div><p style="text-align: center; color: #94A3B8;">SIN DATOS</p></div>', unsafe_allow_html=True)
         c_t2.markdown('<div class="card-white"><div class="card-title">🌐 Top E-Commerce</div><p style="text-align: center; color: #94A3B8;">SIN DATOS</p></div>', unsafe_allow_html=True)
 
-        # Última Fila de Monitoreo
         f1, f2 = st.columns([2.5, 1.5])
         f1.markdown('<div class="card-white"><div class="card-title">🛒 Últimas Ventas</div><p style="text-align: center; color: #94A3B8;">SIN VENTAS RECIENTES</p></div>', unsafe_allow_html=True)
         f2.markdown('<div class="card-white"><div class="card-title" style="color: #EF4444;">⚠️ Stock Crítico</div><p style="text-align: center; color: #4ADE80; font-weight: bold;">TODO EN ORDEN</p></div>', unsafe_allow_html=True)
 
     with col_derecha:
-        # Bloque Operativo Derecho Estilizado
         st.markdown('<div class="card-white" style="background-color: #EFF6FF; border: 1px solid #BFDBFE; height: 100%;"><div class="card-title" style="color: #1E40AF;">🛒 MÓDULO OPERATIVO</div><br><p style="font-size:12px; color: #1E3A8A;">Este panel se activará dinámicamente al facturar o cotizar artículos en las fases superiores.</p></div>', unsafe_allow_html=True)
 
-# Conmutación limpia de contenedores para el resto de los botones del menú lateral
 else:
     st.title(modulo_seleccionado)
     st.info("Estructura de la Capa 1 lista para recibir la automatización de este módulo.")
-    st.write("Selecciona 'Panel Principal / Dashboard' en el menú izquierdo para regresar.")
