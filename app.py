@@ -5,7 +5,7 @@ from datetime import datetime
 import urllib.parse
 
 # =====================================================================
-# MOTOR DE INICIALIZACIÓN DE BASE DE DATOS OPERATIVA RELACIONAL
+# MOTOR DE INICIALIZACIÓN Y AUTO-MIGRACIÓN DE BASE DE DATOS (ANTI-ERROR)
 # =====================================================================
 def inicializar_estructura_erp():
     conn = sqlite3.connect('gc_ecosistema_data.db')
@@ -37,6 +37,22 @@ def inicializar_estructura_erp():
                         id INTEGER PRIMARY KEY AUTOINCREMENT, fecha TEXT, descripcion TEXT,
                         monto_original REAL, moneda TEXT, tasa_cambio REAL, equivalente_usd REAL, proveedor_rif TEXT)''')
     
+    # 🛠️ SCRIPT DE AUTO-MIGRACIÓN: Si la base de datos es vieja, inyecta las columnas faltantes para evitar caídas
+    try:
+        cursor.execute("ALTER TABLE ventas ADD COLUMN comision_ganada_usd REAL DEFAULT 0.0")
+    except sqlite3.OperationalError:
+        pass  # La columna ya existe, no se hace nada
+
+    try:
+        cursor.execute("ALTER TABLE ventas ADD COLUMN vendedor TEXT DEFAULT 'Cajero 1'")
+    except sqlite3.OperationalError:
+        pass  # La columna ya existe, no se hace nada
+
+    try:
+        cursor.execute("ALTER TABLE inventario ADD COLUMN rotacion TEXT DEFAULT 'Alta'")
+    except sqlite3.OperationalError:
+        pass
+
     # Inyectar muestras iniciales si las tablas están vacías
     cursor.execute("SELECT COUNT(*) FROM configuracion")
     if cursor.fetchone()[0] == 0:
@@ -99,8 +115,9 @@ if menu == "📊 Dashboard / KPIs":
     conn = sqlite3.connect('gc_ecosistema_data.db')
     ventas_totales_df = pd.read_sql_query("SELECT SUM(monto_usd) as total FROM ventas", conn)
     comisiones_totales_df = pd.read_sql_query("SELECT SUM(comision_ganada_usd) as total FROM ventas", conn)
-    total_hoy = ventas_totales_df['total'].iloc[0] or 0.0
-    total_comision = comisiones_totales_df['total'].iloc[0] or 0.0
+    
+    total_hoy = ventas_totales_df['total'].iloc[0] if not ventas_totales_df.empty and ventas_totales_df['total'].iloc[0] is not None else 0.0
+    total_comision = comisiones_totales_df['total'].iloc[0] if not comisiones_totales_df.empty and comisiones_totales_df['total'].iloc[0] is not None else 0.0
     conn.close()
     
     c1, c2, c3, c4 = st.columns(4)
@@ -140,7 +157,7 @@ if menu == "📊 Dashboard / KPIs":
         top_prod_df = pd.read_sql_query("SELECT i.nombre as Producto, SUM(v.cantidad) as Cantidad FROM ventas v JOIN inventario i ON v.codigo_producto = i.id GROUP BY i.nombre ORDER BY Cantidad DESC LIMIT 5", conn)
         conn.close()
         if top_prod_df.empty:
-            top_prod_df = pd.DataFrame({'Producto': ['Muestra Producto 1'], 'Cantidad': [100]})
+            top_prod_df = pd.DataFrame({'Producto': ['Muestra Producto 1'], 'Cantidad': [150]})
         st.dataframe(top_prod_df, use_container_width=True, hide_index=True)
 
     with m2:
@@ -153,17 +170,3 @@ if menu == "📊 Dashboard / KPIs":
     with m3:
         st.markdown("<p style='color:#e67e22; font-weight:bold; margin-bottom:5px;'>⚠️ ALERTAS BAJA ROTACIÓN (HUESO)</p>", unsafe_allow_html=True)
         conn = sqlite3.connect('gc_ecosistema_data.db')
-        df_hueso = pd.read_sql_query("SELECT id, nombre, stock, dias_stock FROM inventario WHERE dias_stock >= 15", conn)
-        conn.close()
-        
-        if df_hueso.empty:
-            st.info("No hay inventario estancado en los almacenes.")
-        else:
-            for idx, row in df_hueso.iterrows():
-                col_t, col_b = st.columns()
-                with col_t:
-                    st.write(f"📦 **{row['nombre']}**  \nStock: {row['stock']} bultos | Parado: {row['dias_stock']} días")
-                with col_b:
-                    if st.button("PROMO", key=f"promo_{row['id']}"):
-                        msg = f"🎉 *¡OFERTA FLASH!* 🎉\n\nTenemos en promoción:\n📦 *{row['nombre']}*\n⚡ ¡Escríbenos para asegurar tu bulto!"
-                        link = f"https://whatsapp.com{urllib.parse.quote(msg)}"
