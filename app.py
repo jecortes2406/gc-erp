@@ -5,6 +5,7 @@ import json
 
 
 from database_manager import init_db
+from modulo_inventario import mostrar_formulario_inventario
 # =====================================================================
 # 1. CONFIGURACIÓN DE LA PÁGINA Y ESTADOS GLOBALES
 # =====================================================================
@@ -90,10 +91,14 @@ modulos = [
     "📑 Facturas Emitidas", "📝 Cotizaciones", "💰 Control de Cajas", 
     "📉 Flujo de Caja", "👥 Cuentas x Cobrar", "⚠️ Notas de Crédito/Débito", 
     "🛒 Compras a Proveedores", "🗂️ Gestión / Inventario", "📈 Reportes Generales", 
+    "Gestion / Inventario"
     "⚙️ Sistema y Configuración"
 ]
 modulo_seleccionado = st.sidebar.radio("MENÚ DE OPERACIONES:", modulos)
 
+# --- CONEXIÓN DEL MÓDULO ---
+if "Gestión / Inventario" in modulo_seleccionado:
+    mostrar_formulario_inventario()
 # =====================================================================
 # 5. PANEL CENTRAL
 # =====================================================================
