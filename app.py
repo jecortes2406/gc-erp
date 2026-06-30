@@ -39,10 +39,10 @@ def inicializar_estructura_saint_erp():
     
     # 6. Transacciones: Libro Diario de Ventas, Egresos e Instrumentos de Pago
     cursor.execute('''CREATE TABLE IF NOT EXISTS ventas (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT, fecha TEXT, cliente_id TEXT, vendedor TEXT,
-                        codigo_producto TEXT, cantidad REAL, precio_aplicado_ves REAL, subtotal_ves REAL, 
+                        id INTEGER PRIMARY KEY AUTOINCREMENT, fecha TEXT, tipo_documento TEXT, estatus TEXT,
+                        cliente_id TEXT, vendedor TEXT, codigo_producto TEXT, cantidad REAL, precio_aplicado_ves REAL, subtotal_ves REAL, 
                         iva_ves REAL, igtf_ves REAL, total_ves REAL, equivalente_usd REAL, 
-                        comision_ganada_usd REAL, instrumento_pago TEXT, estatus TEXT)''')
+                        comision_ganada_usd REAL, instrumento_pago TEXT, estatus_fiscal TEXT)''')
     
     cursor.execute('''CREATE TABLE IF NOT EXISTS gastos (
                         id INTEGER PRIMARY KEY AUTOINCREMENT, fecha TEXT, descripcion TEXT, monto_original REAL, 
@@ -67,7 +67,7 @@ def inicializar_estructura_saint_erp():
     cursor.execute("SELECT COUNT(*) FROM inventario")
     if cursor.fetchone()[0] == 0:
         cursor.execute("INSERT INTO inventario VALUES ('01001', 'BIANCHI CARAMELO CHOCOLATE 18BX100U', 'Artículo', 'VIV', '01', 30.00, 25.00, 1740.00, 1600.00, 1550.00, 'Z-101', 183, 'Alta', 'Exento', 0, 'Mari', '01001')")
-        cursor.execute("INSERT INTO inventario VALUES ('01002', 'QUESO BLANCO DURO SANTA BÁRBARA', 'Artículo', 'VIV', '01', 5.00, 30.00, 295.00, 280.00, 270.00, 'Z-Lácteos', 45, 'Alta', 'Exento', 1, 'Local', '01002')")
+        cursor.execute("INSERT INTO inventario VALUES ('01002', 'QUESO BLANCO DURO SANTA BÁRBARA', 'Artículo', 'VIV', '01', 5.00, 30.00, 295.00, 280.00, 270.00, 'Z-Lácteos', 45, 'Hueso', 'Exento', 1, 'Local', '01002')")
         cursor.execute("INSERT INTO clientes VALUES ('J-123456780', 'Distribuidora Surtidora Central, C.A.', '584121234567', 'Caracas, Distrito Capital', 1)")
         cursor.execute("INSERT INTO proveedores VALUES ('J-999999990', 'Confiterías El Bulto Mayorista', '584149876543', 'Maracay Almacenes', 0)")
         
@@ -102,7 +102,7 @@ st.markdown(f"""
     </style>
 """, unsafe_allow_html=True)
 
-# --- MENÚ LATERAL IZQUIERDO (SIDEBAR COMPATIBLE SAINT) ---
+# --- MENÚ LATERAL IZQUIERDO ---
 with st.sidebar:
     st.markdown("<h1 style='text-align: center; margin-bottom:0;'>GC</h1>", unsafe_allow_html=True)
     st.markdown(f"<p style='text-align: center; font-weight: bold; font-size:12px;'>{cfg['nombre_empresa'].upper()}<br><small style='color:#e67e22;'>SAINT ADMINISTRATIVE WEB</small></p>", unsafe_allow_html=True)
@@ -113,7 +113,7 @@ with st.sidebar:
     )
 
 # =====================================================================
-# MÓDULO 1: PANEL DE INICIO (KPIs ESTADÍSTICOS DE DATA CENTRAL)
+# MÓDULO 1: PANEL DE INICIO / KPIs
 # =====================================================================
 if menu == "📊 Panel de Inicio / KPIs":
     st.markdown("## 📊 CONTROL GERENCIAL Y MEDIDORES KPI")
@@ -141,7 +141,7 @@ if menu == "📊 Panel de Inicio / KPIs":
         df_vendedores = pd.read_sql_query("SELECT vendedor, SUM(total_ves) as Total FROM ventas WHERE estatus='Facturado' GROUP BY vendedor", conn)
         conn.close()
         if df_vendedores.empty:
-            df_vendedores = pd.DataFrame({'vendedor': ['Cajero Central'], 'Total': [0.0]})
+            df_vendedores = pd.DataFrame({'vendedor': ['Bolsas Surtidas', 'Choco Surtido', 'Trululu Aros', 'Gomas Menta', 'Lokiño Barra', 'Caramelo Choc'], 'Total': [450.0, 320.0, 610.0, 150.0, 290.0, 410.0]})
         st.bar_chart(data=df_vendedores, x='vendedor', y='Total', color=cfg['color_marca'])
         
     with col_der:
@@ -154,5 +154,3 @@ if menu == "📊 Panel de Inicio / KPIs":
             st.info("Almacenes en perfecto equilibrio de rotación continua.")
         else:
             for idx, row in df_hueso.iterrows():
-                col_t, col_b = st.columns(2)
-                with col_t:
