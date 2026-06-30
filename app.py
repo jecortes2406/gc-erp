@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
-import requests
+import urllib.request
+import json
 
 # =====================================================================
 # 1. CONFIGURACIÓN DE LA PÁGINA
@@ -47,21 +48,23 @@ st.markdown("""
     """, unsafe_allow_html=True)
 
 # =====================================================================
-# 3. AUTOMATIZACIÓN: FUNCIÓN CONEXIÓN BCV EN VIVO
+# 3. AUTOMATIZACIÓN: FUNCIÓN CONEXIÓN BCV EN VIVO (LIBRERÍA NATIVA)
 # =====================================================================
 @st.cache_data(ttl=3600)
 def obtener_tasas_bcv_reales():
-    """Consulta internet para traer las tasas oficiales de Venezuela en tiempo real"""
+    """Consulta internet usando herramientas nativas para traer las tasas oficiales de Venezuela"""
     try:
         url = "https://ve.dispotech.workers.dev/"
-        respuesta = requests.get(url, timeout=10)
-        datos = respuesta.json()
+        # Solicitud nativa sin dependencias externas
+        req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+        with urllib.request.urlopen(req, timeout=10) as response:
+            datos = json.loads(response.read().decode())
         
         usd = float(datos['bcv']['usd'])
         eur = float(datos['bcv']['eur'])
         return usd, eur
     except Exception:
-        # Valores de respaldo estables
+        # Valores de respaldo estables en caso de falla de red
         return 42.35, 45.20
 
 # Carga automática inicial
@@ -87,7 +90,7 @@ st.sidebar.markdown("---")
 
 st.sidebar.markdown("### 🔄 CONTROL CAMBIARIO")
 
-# Botón nativo estable
+# Botón nativo de actualización forzada
 if st.sidebar.button("🔄 Actualizar Tasas BCV", use_container_width=True):
     st.cache_data.clear()
     tasa_usd_bcv, tasa_eur_bcv = obtener_tasas_bcv_reales()
@@ -97,7 +100,7 @@ if st.sidebar.button("🔄 Actualizar Tasas BCV", use_container_width=True):
 
 st.sidebar.markdown(" ")
 
-# Lista vertical usando cajas nativas para garantizar cero errores visuales de Node
+# Lista vertical usando bloques nativos estables
 st.sidebar.info(f"*💵 BCV USD:*  \nBs. {st.session_state.tasa_bcb_usd:.2f}")
 st.sidebar.info(f"*💶 BCV EUR:*  \nBs. {st.session_state.tasa_bcb_eur:.2f}")
 
