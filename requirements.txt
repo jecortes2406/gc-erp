@@ -2,3 +2,5 @@ streamlit
 pandas
 streamlit-option-menu
 openpyxl
+streamlit==1.35.0
+pandas
