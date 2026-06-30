@@ -1,20 +1,23 @@
 import streamlit as st
-# Importamos la función desde tu archivo (asegúrate que el nombre sea correcto)
-from modulo_inventario import mostrar_formulario_inventario
 
-st.set_page_config(layout="wide")
+# Configuración inicial de la página
+st.set_page_config(layout="wide", page_title="ERP Maestro")
 
-# Barra lateral para navegación
-st.sidebar.title("Navegación")
-modulo_seleccionado = st.sidebar.radio(
-    "Selecciona un módulo:",
-    ["Panel Principal / Dashboard", "Gestión / Inventario"]
-)
+# Estilo corporativo (fondo gris claro y barra lateral oscura)
+st.markdown("""
+    <style>
+    .stApp { background-color: #f0f2f6; }
+    [data-testid="stSidebar"] { background-color: #1e293b; }
+    </style>
+""", unsafe_allow_html=True)
 
-# Lógica de navegación principal (Totalmente plana para evitar errores)
-if modulo_seleccionado == "Gestión / Inventario":
+# Menú de navegación
+menu = st.sidebar.radio("Navegación", ["Panel Principal", "Gestión / Inventario"])
+
+# Lógica de carga de módulos (Evita errores de indentación)
+if menu == "Gestión / Inventario":
+    from modulo_inventario import mostrar_formulario_inventario
     mostrar_formulario_inventario()
-
-elif modulo_seleccionado == "Panel Principal / Dashboard":
-    st.title("Dashboard")
-    st.write("Bienvenido al panel principal.")
+else:
+    st.title("Panel Gerencial")
+    st.write("Bienvenido al sistema. Selecciona una opción en el menú lateral.")
