@@ -87,11 +87,18 @@ st.sidebar.warning(f"REFERENCIA MASTER: Bs. {st.session_state.tasa_binance:.2f}"
 st.sidebar.markdown("---")
 
 modulos = [
-    "📊 Panel Principal / Dashboard", "📦 Órdenes Online", "🧾 Crear Factura (POS)", 
-    "📑 Facturas Emitidas", "📝 Cotizaciones", "💰 Control de Cajas", 
-    "📉 Flujo de Caja", "👥 Cuentas x Cobrar", "⚠️ Notas de Crédito/Débito", 
-    "🛒 Compras a Proveedores", "🗂️ Gestión / Inventario", "📈 Reportes Generales", 
-    "Gestion / Inventario"
+    "📊 Panel Principal / Dashboard",
+    "📦 Órdenes Online",
+    "🧾 Crear Factura (POS)",
+    "📑 Facturas Emitidas",
+    "📝 Cotizaciones",
+    "💰 Control de Cajas",
+    "📉 Flujo de Caja",
+    "👥 Cuentas x Cobrar",
+    "⚠️ Notas de Crédito/Débito",
+    "🛒 Compras a Proveedores",
+    "🗂️ Gestión / Inventario",
+    "📈 Reportes Generales",
     "⚙️ Sistema y Configuración"
 ]
 modulo_seleccionado = st.sidebar.radio("MENÚ DE OPERACIONES:", modulos)
