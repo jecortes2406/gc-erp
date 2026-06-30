@@ -14,7 +14,7 @@ st.set_page_config(
 )
 
 # =====================================================================
-# 2. SISTEMA DE ESTILOS CSS INYECTADOS (Solo para el Panel Central)
+# 2. SISTEMA DE ESTILOS CSS INYECTADOS
 # =====================================================================
 st.markdown("""
     <style>
@@ -55,7 +55,6 @@ def obtener_tasas_bcv_reales():
     """Consulta internet usando herramientas nativas para traer las tasas oficiales de Venezuela"""
     try:
         url = "https://ve.dispotech.workers.dev/"
-        # Solicitud nativa sin dependencias externas
         req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
         with urllib.request.urlopen(req, timeout=10) as response:
             datos = json.loads(response.read().decode())
@@ -64,7 +63,6 @@ def obtener_tasas_bcv_reales():
         eur = float(datos['bcv']['eur'])
         return usd, eur
     except Exception:
-        # Valores de respaldo estables en caso de falla de red
         return 42.35, 45.20
 
 # Carga automática inicial
@@ -100,7 +98,7 @@ if st.sidebar.button("🔄 Actualizar Tasas BCV", use_container_width=True):
 
 st.sidebar.markdown(" ")
 
-# Lista vertical usando bloques nativos estables
+# Lista vertical usando bloques nativos estables para evitar errores
 st.sidebar.info(f"*💵 BCV USD:*  \nBs. {st.session_state.tasa_bcb_usd:.2f}")
 st.sidebar.info(f"*💶 BCV EUR:*  \nBs. {st.session_state.tasa_bcb_eur:.2f}")
 
