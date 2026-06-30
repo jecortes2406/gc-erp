@@ -1,70 +1,63 @@
 import streamlit as st
-import sqlite3
 import pandas as pd
-from streamlit_option_menu import option_menu
-import os
+import plotly.express as px
+from datetime import datetime
 
-# Configuración Visual
-st.set_page_config(page_title="GC ERP Pro", layout="wide")
-st.markdown("""<style>
-    .stApp {background-color: #fcfcfc;}
-    section[data-testid="stSidebar"] {background-color: #fdf5f5; border-right: 2px solid #CD7F32;}
-    .nav-link {color: #990000 !important;}
-    .nav-link-selected {background-color: #CD7F32 !important; color: white !important;}
-    div.stButton > button {background-color: #CD7F32; color: white; border-radius: 5px;}
-    </style>""", unsafe_allow_html=True)
+# Configuración de página con colores institucionales
+st.set_page_config(page_title="GC Grupo Comercial - Admin", layout="wide")
+st.markdown("""
+    <style>
+    .stApp { background-color: #002366; color: #FFFFFF; }
+    h1, h2, h3 { color: #CD7F32; }
+    </style>
+""", unsafe_allow_html=True)
 
-# Base de Datos
-conn = sqlite3.connect('gc_erp_pro.db', check_same_thread=False)
-c = conn.cursor()
-c.execute('''CREATE TABLE IF NOT EXISTS items (id INTEGER PRIMARY KEY, nombre TEXT, p_detal REAL, p_mayor REAL, p_bulto REAL, foto TEXT)''')
-c.execute('''CREATE TABLE IF NOT EXISTS ventas (id INTEGER PRIMARY KEY, fecha DATE, prod TEXT, total REAL)''')
-conn.commit()
+# Lógica de Blindaje Cambiario
+def calcular_precios(costo_usd, margen_pct, tasa_bcv, tasa_binance):
+    precio_base_usd = costo_usd * (1 + margen_pct / 100)
+    return {
+        "detal_ves": precio_base_usd * tasa_bcv,
+        "mayor_ves": (precio_base_usd * 0.90) * tasa_bcv, # Ejemplo descuento mayor
+        "blindaje_referencia": precio_base_usd * tasa_binance
+    }
 
-# Menú Lateral
-with st.sidebar:
-    selected = option_menu("GC ERP", ["Nueva Venta", "Inventario", "Dashboard"], icons=['cart', 'box', 'graph-up'])
+# --- Sidebar para Control de Tasas ---
+st.sidebar.title("GC Grupo Comercial")
+tasa_bcv = st.sidebar.number_input("Tasa BCV (VES/USD)", value=36.50)
+tasa_euro = st.sidebar.number_input("Tasa Euro BCV", value=40.00)
+tasa_binance = st.sidebar.number_input("Tasa Binance (Ref)", value=37.00)
 
-# Módulo de Ventas (Punto de Venta)
-if selected == "Nueva Venta":
-    st.subheader("🛒 Punto de Venta")
-    items = pd.read_sql("SELECT * FROM items", conn)
+# --- Módulo de KPIs (Mediciones de Vendedores) ---
+def render_kpi_dashboard():
+    st.header("📈 Dashboard de Gestión y KPIs")
+    # KPIs típicos: Ventas totales, Tasa de Conversión, Ticket Promedio, Margen por vendedor
+    data = {'Vendedor': ['Vendedor A', 'Vendedor B', 'Vendedor C'],
+            'Ventas': [1500, 2200, 1800],
+            'Conversión': [0.75, 0.85, 0.60]}
+    df = pd.DataFrame(data)
+    fig = px.bar(df, x='Vendedor', y='Ventas', title="Rendimiento por Vendedor")
+    st.plotly_chart(fig)
+
+# --- Módulo de Inventario Inteligente (Huesos y Top Ventas) ---
+def render_inventario_analisis():
+    st.subheader("📦 Análisis de Inventario")
+    col1, col2, col3 = st.columns(3)
     
-    col_centro, col_der = st.columns([2, 1])
-    with col_centro:
-        for i, row in items.iterrows():
-            st.write(f"**{row['nombre']}** - ${row['p_detal']}")
-            if st.button(f"Agregar {row['nombre']}", key=f"btn_{i}"):
-                st.session_state.cart = row
-    
-    with col_der:
-        st.subheader("🧺 Canasta")
-        if 'cart' in st.session_state:
-            st.write(f"Producto: {st.session_state.cart['nombre']}")
-            st.write(f"Total: ${st.session_state.cart['p_detal']}")
-            if st.button("Confirmar Venta"):
-                c.execute("INSERT INTO ventas (fecha, prod, total) VALUES (DATE('now'),?,?)", 
-                          (st.session_state.cart['nombre'], st.session_state.cart['p_detal']))
-                conn.commit()
-                st.success("Venta procesada!")
-        else:
-            st.info("Canasta vacía")
+    with col1:
+        st.write("🔥 Top 10 Más Vendidos")
+        # Aquí iría el query a tu DB
+    with col2:
+        st.write("💰 Mayor Margen")
+    with col3:
+        st.write("🦴 Productos Hueso (Promociones)")
+        # Botón para crear promoción en este producto
+        if st.button("Crear Promo Hueso"):
+            st.info("Configurando descuento automático...")
 
-# Módulo Inventario
-elif selected == "Inventario":
-    st.subheader("📦 Carga de Inventario")
-    with st.form("carga"):
-        nom = st.text_input("Nombre")
-        p_d = st.number_input("Precio Detal")
-        p_m = st.number_input("Precio Mayor")
-        p_b = st.number_input("Precio Bulto")
-        if st.form_submit_button("Guardar"):
-            c.execute("INSERT INTO items (nombre, p_detal, p_mayor, p_bulto) VALUES (?,?,?,?)", (nom, p_d, p_m, p_b))
-            conn.commit()
-            st.rerun()
+# Menú principal
+menu = st.sidebar.radio("Navegación", ["Dashboard", "Inventario", "Facturación", "Gastos"])
 
-elif selected == "Dashboard":
-    st.title("📈 Métricas Gerenciales")
-    df = pd.read_sql("SELECT * FROM ventas", conn)
-    if not df.empty:
-        st.bar_chart(df.groupby('prod')['total'].sum())
+if menu == "Dashboard":
+    render_kpi_dashboard()
+elif menu == "Inventario":
+    render_inventario_analisis()
