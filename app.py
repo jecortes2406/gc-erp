@@ -73,39 +73,41 @@ with st.sidebar:
 if menu == "📊 Dashboard":
     st.markdown("## 📊 CONTROL GERENCIAL Y OPERATIVO")
     
-    # 🎛️ BLOQUE 1: Bloques Superiores de Configuración Cambiaria e Ingresos
+    # 🎛️ BLOQUE 1: Tasas de Configuración e Ingresos
     c1, c2, c3, c4 = st.columns(4)
     with c1:
-        st.info("### Tasa BCV del Día\n**Bs. 12.33633** / USD")
+        st.metric(label="Tasa BCV del Día", value="Bs. 12.33633")
     with c2:
-        st.info("### Tasa Euro BCV\n**0.33** / EUR")
+        st.metric(label="Tasa Euro BCV", value="0.33/EUR")
     with c3:
-        st.info("### Tasa Binance\n**0.0276835** (Ref)")
+        st.metric(label="Tasa Binance (Ref)", value="0.0276835")
     with c4:
-        st.success("### Ventas Totales Hoy\n**$1,653.27** USD")
+        st.metric(label="Ventas Totales Hoy", value="$1,653.27")
 
     st.write("---")
     
     # 📊 BLOQUE 2: Reportes KPI (Rendimiento por Vendedor y Gráficos)
     st.markdown("### 📈 REPORTES KPI (EQUIPO DE VENTAS)")
-    col_izq, col_der = st.columns([2, 1])
+    col_izq, col_der = st.columns(2)
     
     with col_izq:
         st.write("**Rendimiento por Vendedor (Ventas Mensuales)**")
-        # Simulación exacta del gráfico de barras horizontales de la imagen
         data_vendedores = {
             'Vendedor': ['Bolsas Surtidas', 'Choco Surtido', 'Trululu Aros', 'Gomas Menta', 'Lokiño Barra', 'Caramelo Choc'],
-            'Ventas (USD)': [500000, 333333, 250000, 200000, 150000, 100000]
+            'Ventas (USD)': [550000, 320000, 250000, 180000, 120000, 95000]
         }
         df_vend = pd.DataFrame(data_vendedores)
         st.bar_chart(data=df_vend, x='Vendedor', y='Ventas (USD)', color='#e67e22')
 
     with col_der:
-        st.write("**Margen de Ganancia Promedio**")
-        data_pie = {'Categoría': ['Vendedor A', 'Vendedor B', 'Margen Neta'], 'Valores':}
+        st.write("**Margen de Ganancia Promedio por Vendedor**")
+        data_pie = {
+            'Categoría': ['Vendedor A', 'Vendedor B', 'Margen Neto'], 
+            'Valores': [40, 35, 25]
+        }
         df_pie = pd.DataFrame(data_pie)
-        st.dataframe(df_pie, hide_index=True)
-        st.caption("Tasa de Conversión de Leads: Alta Estabilidad en Ventas.")
+        st.dataframe(df_pie, hide_index=True, use_container_width=True)
+        st.caption("📈 Tasa de Conversión de Leads a Ventas estable en el último trimestre.")
 
     st.write("---")
     
@@ -132,9 +134,8 @@ if menu == "📊 Dashboard":
         st.dataframe(top_margen, use_container_width=True, hide_index=True)
 
     with m3:
-        st.markdown("<p style='color:#e67e22; font-weight:bold;'>⚠️ 5 PRODUCTOS CON BAJA ROTACIÓN (HUESO) - MÓDULO PROMOCIONES</p>", unsafe_allow_html=True)
+        st.markdown("<p style='color:#e67e22; font-weight:bold;'>⚠️ 5 PRODUCTOS CON BAJA ROTACIÓN (HUESO)</p>", unsafe_allow_html=True)
         
-        # Conexión real con base de datos para ejecutar el botón interactivo de ofertas flash
         conn = sqlite3.connect('inventario_grafico_v1.db')
         df_hueso = pd.read_sql_query("SELECT nombre, stock, dias_stock FROM productos_gc WHERE rotacion='Hueso'", conn)
         conn.close()
@@ -142,9 +143,8 @@ if menu == "📊 Dashboard":
         for idx, row in df_hueso.iterrows():
             col_txt, col_btn = st.columns([2, 1])
             with col_txt:
-                st.write(f"📦 **{row['nombre']}**\nStock: {row['stock']} | Días parados: {row['dias_stock']}")
+                st.write(f"📦 **{row['nombre']}**\nStock: {row['stock']} | Días: {row['dias_stock']}")
             with col_btn:
-                # Botón interactivo sensible para disparar el formulario administrativo de ofertas
                 if st.button("CREAR PROMO", key=f"btn_{idx}"):
                     st.toast(f"⚡ Configurando Oferta Flash para: {row['nombre']}")
 
@@ -156,7 +156,6 @@ if menu == "📊 Dashboard":
     df_inventario = pd.read_sql_query("SELECT id, nombre, costo_usd, porc_ganancia, precio_detal_ves, precio_bulto_ves, precio_mayor_ves FROM productos_gc", conn)
     conn.close()
     
-    # Muestra la matriz de precios editable tal como solicita tu imagen
     st.data_editor(
         df_inventario,
         column_config={
@@ -174,4 +173,4 @@ if menu == "📊 Dashboard":
     st.caption("💡 Toda la tabla anterior es completamente editable en caliente desde tu navegador web. Los cambios se guardan al instante.")
 
 else:
-    st.info(f"El módulo de **{menu}** está completamente enlazado a la base de datos estructural del Dashboard principal. Listo para recibir operaciones.")
+    st.info(f"El módulo de **{menu}** está completamente enlazado a la base de datos estructural del Dashboard principal.")
