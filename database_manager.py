@@ -109,3 +109,13 @@ def mostrar_formulario_inventario():
         if st.button("⬅️ Cancelar"):
             st.session_state.modo_ingreso = False
             st.rerun()
+            # En la función de creación de tabla:
+cursor.execute('''CREATE TABLE IF NOT EXISTS productos (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    sku TEXT, nombre TEXT, categoria TEXT, 
+                    vencimiento TEXT, proveedor TEXT, stock_inicial INTEGER,
+                    costo_base REAL, moneda_pago TEXT, stock_minimo INTEGER,
+                    margen_detal REAL, margen_bulto REAL, margen_mayor REAL, 
+                    iva_aplicado TEXT, vendedor TEXT, comision_vendedor REAL,
+                    imagen_path TEXT
+                )''')
