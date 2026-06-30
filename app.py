@@ -6,20 +6,34 @@ from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from openpyxl.utils import get_column_letter
 
-# Configuración de diseño idéntico a la imagen corporativa
+# Configuración de diseño con interfaz gerencial limpia
 st.set_page_config(page_title="Grupo Comercial - Administrativo V1.0", layout="wide", page_icon="🏢")
 
-# Inyección de estilos CSS para clonar los colores Azul y Naranja del Dashboard
+# Inyección de estilos CSS para un entorno ejecutivo (Fondo Claro, Letras Oscuras)
 st.markdown("""
     <style>
-        .main { background-color: #0d233a; color: white; }
-        .stApp { background-color: #0b1d30; }
-        h1, h2, h3 { color: #f39c12 !important; font-family: 'Segoe UI', sans-serif; }
-        div[data-testid="stMetricValue"] { color: #f39c12 !important; font-weight: bold; }
-        .stButton>button { background-color: #e67e22; color: white; border-radius: 5px; border: none; font-weight: bold;}
+        .main { background-color: #f8f9fa; color: #212529; }
+        .stApp { background-color: #f8f9fa; }
+        
+        /* Modificación de títulos principales */
+        h1, h2, h3 { color: #1b4f72 !important; font-family: 'Segoe UI', sans-serif; font-weight: 600; }
+        
+        /* Estilo de las métricas superiores */
+        div[data-testid="stMetric"] { background-color: #ffffff; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        div[data-testid="stMetricLabel"] { color: #64748b !important; font-weight: 500; }
+        div[data-testid="stMetricValue"] { color: #1e293b !important; font-weight: 700; }
+        
+        /* Botones Naranjas Corporativos */
+        .stButton>button { background-color: #e67e22; color: white; border-radius: 5px; border: none; font-weight: bold; width: 100%; }
         .stButton>button:hover { background-color: #d35400; color: white; }
-        .css-1542th0 { background-color: #11253c; }
-        div.stDataFrame { background-color: #11253c; border-radius: 8px; }
+        
+        /* Barra lateral izquierda */
+        section[data-testid="stSidebar"] { background-color: #1e293b !important; }
+        section[data-testid="stSidebar"] h1, section[data-testid="stSidebar"] p { color: #ffffff !important; }
+        section[data-testid="stSidebar"] label { color: #94a3b8 !important; }
+        
+        /* Tablas y Editores de Datos */
+        div.stDataFrame { background-color: #ffffff; border-radius: 8px; border: 1px solid #e2e8f0; }
     </style>
 """, unsafe_allow_html=True)
 
@@ -62,7 +76,7 @@ inicializar_base_datos_grafica()
 # --- MENÚ LATERAL IZQUIERDO (SIDEBAR CORPORATIVO) ---
 with st.sidebar:
     st.markdown("<h1 style='text-align: center; color: #f39c12;'>GC</h1>", unsafe_allow_html=True)
-    st.markdown("<p style='text-align: center; font-weight: bold; color: white;'>GRUPO COMERCIAL<br><small>ADMINISTRATIVO V1.0</small></p>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align: center; font-weight: bold;'>GRUPO COMERCIAL<br><small>ADMINISTRATIVO V1.0</small></p>", unsafe_allow_html=True)
     st.write("---")
     menu = st.radio(
         "Navegación del Sistema",
@@ -73,7 +87,7 @@ with st.sidebar:
 if menu == "📊 Dashboard":
     st.markdown("## 📊 CONTROL GERENCIAL Y OPERATIVO")
     
-    # 🎛️ BLOQUE 1: Tasas de Configuración e Ingresos
+    # 🎛️ BLOQUE 1: Tasas de Configuración e Ingresos (Métricas ejecutivas en blanco)
     c1, c2, c3, c4 = st.columns(4)
     with c1:
         st.metric(label="Tasa BCV del Día", value="Bs. 12.33633")
@@ -94,16 +108,16 @@ if menu == "📊 Dashboard":
         st.write("**Rendimiento por Vendedor (Ventas Mensuales)**")
         data_vendedores = {
             'Vendedor': ['Bolsas Surtidas', 'Choco Surtido', 'Trululu Aros', 'Gomas Menta', 'Lokiño Barra', 'Caramelo Choc'],
-            'Ventas (USD)': [550000, 320000, 250000, 180000, 120000, 95000]
+            'Ventas (USD)': [550, 420, 610, 310, 240, 500]
         }
         df_vend = pd.DataFrame(data_vendedores)
-        st.bar_chart(data=df_vend, x='Vendedor', y='Ventas (USD)', color='#e67e22')
+        st.bar_chart(data=df_vend, x='Vendedor', y='Ventas (USD)', color='#1b4f72')
 
     with col_der:
         st.write("**Margen de Ganancia Promedio por Vendedor**")
         data_pie = {
             'Categoría': ['Vendedor A', 'Vendedor B', 'Margen Neto'], 
-            'Valores': [40, 35, 25]
+            'Valores': [35.5, 42.1, 22.4]
         }
         df_pie = pd.DataFrame(data_pie)
         st.dataframe(df_pie, hide_index=True, use_container_width=True)
@@ -116,7 +130,7 @@ if menu == "📊 Dashboard":
     m1, m2, m3 = st.columns(3)
     
     with m1:
-        st.markdown("<p style='color:#f39c12; font-weight:bold;'>TOP 10 PRODUCTOS MÁS VENDIDOS</p>", unsafe_allow_html=True)
+        st.markdown("<p style='color:#1b4f72; font-weight:bold;'>TOP 10 PRODUCTOS MÁS VENDIDOS</p>", unsafe_allow_html=True)
         top_10 = pd.DataFrame({
             'Nombre del Producto': ['Nombre Producto 1', 'Nombre Producto 2', 'Nombre Comercial 1', 'Nombre Comercial 2'],
             'Cantidad':,
@@ -125,7 +139,7 @@ if menu == "📊 Dashboard":
         st.dataframe(top_10, use_container_width=True, hide_index=True)
 
     with m2:
-        st.markdown("<p style='color:#f39c12; font-weight:bold;'>TOP 5 PRODUCTOS MAYOR MARGEN</p>", unsafe_allow_html=True)
+        st.markdown("<p style='color:#1b4f72; font-weight:bold;'>TOP 5 PRODUCTOS MAYOR MARGEN</p>", unsafe_allow_html=True)
         top_margen = pd.DataFrame({
             'Producto': ['Nombre de Producto 1', 'Nombre de Producto 2', 'Nombre Producto Detal', 'Nombre de Producto (Margen)'],
             '% Margin': ['34.05%', '33.99%', '17.99%', '32.23%'],
@@ -145,7 +159,7 @@ if menu == "📊 Dashboard":
             with col_txt:
                 st.write(f"📦 **{row['nombre']}**\nStock: {row['stock']} | Días: {row['dias_stock']}")
             with col_btn:
-                if st.button("CREAR PROMO", key=f"btn_{idx}"):
+                if st.button("PROMO", key=f"btn_{idx}"):
                     st.toast(f"⚡ Configurando Oferta Flash para: {row['nombre']}")
 
     st.write("---")
