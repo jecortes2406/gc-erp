@@ -1,47 +1,44 @@
 import streamlit as st
-from database_manager import agregar_producto
+import pandas as pd
+import sqlite3
+
+# Función para obtener los productos de la base de datos
+def obtener_datos_inventario():
+    conn = sqlite3.connect('inventario.db')
+    df = pd.read_sql_query("SELECT * FROM productos", conn)
+    conn.close()
+    return df
 
 def mostrar_formulario_inventario():
-    st.subheader("📦 Formulario Maestro de Carga de Productos")
-    
-    # Abrimos el formulario con un diseño limpio
-    with st.form("form_producto_pro"):
-        # SECCIÓN 1: Identificación y Clasificación
-        st.markdown("### 1. Información del Producto")
-        col1, col2 = st.columns(2)
-        with col1:
-            nombre = st.text_input("Nombre / Descripción del Producto")
-            categoria = st.selectbox("Categoría", ["Víveres", "Confitería", "Heladería", "Hogar", "Limpieza"])
-        with col2:
-            codigo = st.text_input("Código de Producto (SKU)")
-            almacen = st.radio("Almacén de Ubicación", ["Principal", "Secundario"], horizontal=True)
-            
-        # SECCIÓN 2: Costos y Valoración
-        st.markdown("### 2. Estructura de Costos")
-        c1, c2 = st.columns(2)
-        with c1:
-            costo = st.number_input("Costo de Adquisición (Base)", min_value=0.0, format="%.2f")
-        with c2:
-            moneda = st.selectbox("Moneda de Compra", ["Binance (USDT)", "Euro", "Bolívar (VES)"])
-            
-        # SECCIÓN 3: Matriz de Márgenes y Comisiones
-        st.markdown("### 3. Matriz de Márgenes y Comisiones")
-        cols = st.columns(3)
-        etiquetas = ["Detal", "Bulto", "Mayor"]
-        
-        # Diccionarios para almacenar los valores dinámicos
-        márgenes = {}
-        comisiones = {}
-        
-        for i, tipo in enumerate(etiquetas):
-            with cols[i]:
-                st.write(f"*Nivel: {tipo}*")
-                márgenes[tipo] = st.number_input(f"Margen {tipo} (%)", 0.0, key=f"m_{tipo}")
-                comisiones[tipo] = st.number_input(f"Comisión {tipo} (%)", 0.0, key=f"c_{tipo}")
+    st.subheader("📦 INVENTARIO MAESTRO")
+    st.caption("Auditoría profesional de almacén - Proyecto Grupo Comercial")
 
-        # Botón de acción con estilo
-        submit = st.form_submit_button("Guardar Producto en Base de Datos")
-        
-        if submit:
-            st.success(f"Producto '{nombre}' ({codigo}) clasificado en {categoria} - Almacén: {almacen}")
-            # Próximamente: integraremos la función insertar_producto con estos datos
+    # 1. Dashboard de KPIs (Resumen Ejecutivo)
+    df = obtener_datos_inventario()
+    
+    col1, col2, col3, col4 = st.columns(4)
+    # Ejemplo de cálculos rápidos (se ajustarán cuando cargues datos)
+    col1.metric("VALOR VENTA TOTAL", "$0.00")
+    col2.metric("STOCK BAJO", "0")
+    col3.metric("UNIDADES", str(df['existencia_detal'].sum() if not df.empty else 0))
+    col4.metric("INVERSIÓN", "$0.00")
+
+    st.markdown("---")
+
+    # 2. Botón de Nuevo Ingreso
+    if st.button("＋ NUEVO INGRESO", type="primary"):
+        st.session_state.mostrar_form_ingreso = True
+
+    # 3. Tabla de Productos (Tu centro de mando)
+    if not df.empty:
+        st.dataframe(df, use_container_width=True)
+    else:
+        st.info("No hay productos en inventario. ¡Carga el primero!")
+
+    # 4. Lógica de despliegue del formulario (se activará si presionas el botón)
+    if st.session_state.get('mostrar_form_ingreso', False):
+        st.subheader("Registro de Nuevo Producto")
+        # Aquí irá el formulario detallado que diseñamos previamente
+        if st.button("Cerrar Formulario"):
+            st.session_state.mostrar_form_ingreso = False
+            st.rerun()
