@@ -50,22 +50,22 @@ def inicializar_estructura_saint_erp():
 
     # Inyectar configuraciones basales de Saint Enterprise si el sistema está vacío
     cursor.execute("SELECT COUNT(*) FROM configuracion")
-    if cursor.fetchone()[0] == 0:
+    if cursor.fetchone() == 0:
         cursor.execute("INSERT INTO configuracion VALUES (1, 'Grupo Comercial, C.A.', '#1B4F72', 45.50633, 49.33210, 47.85350, 5.0)")
         
     cursor.execute("SELECT COUNT(*) FROM depositos")
-    if cursor.fetchone()[0] == 0:
+    if cursor.fetchone() == 0:
         cursor.execute("INSERT INTO depositos VALUES ('01', 'Depósito Principal Almacén', 'Responsable de Almacén')")
         cursor.execute("INSERT INTO depositos VALUES ('02', 'Depósito Auxiliar de Tienda', 'Supervisor de Turno')")
         
     cursor.execute("SELECT COUNT(*) FROM instancias")
-    if cursor.fetchone()[0] == 0:
+    if cursor.fetchone() == 0:
         cursor.execute("INSERT INTO instancias VALUES ('VIV', 'Víveres Surtidos')")
         cursor.execute("INSERT INTO instancias VALUES ('LIM', 'Limpieza General')")
         cursor.execute("INSERT INTO instancias VALUES ('LIC', 'Licores Nacionales e Importados')")
         
     cursor.execute("SELECT COUNT(*) FROM inventario")
-    if cursor.fetchone()[0] == 0:
+    if cursor.fetchone() == 0:
         cursor.execute("INSERT INTO inventario VALUES ('01001', 'BIANCHI CARAMELO CHOCOLATE 18BX100U', 'Artículo', 'VIV', '01', 30.00, 25.00, 1740.00, 1600.00, 1550.00, 'Z-101', 183, 'Alta', 'Exento', 0, 'Mari', '01001')")
         cursor.execute("INSERT INTO inventario VALUES ('01002', 'QUESO BLANCO DURO SANTA BÁRBARA', 'Artículo', 'VIV', '01', 5.00, 30.00, 295.00, 280.00, 270.00, 'Z-Lácteos', 45, 'Hueso', 'Exento', 1, 'Local', '01002')")
         cursor.execute("INSERT INTO clientes VALUES ('J-123456780', 'Distribuidora Surtidora Central, C.A.', '584121234567', 'Caracas, Distrito Capital', 1)")
@@ -76,7 +76,7 @@ def inicializar_estructura_saint_erp():
 
 inicializar_estructura_saint_erp()
 
-# Extraer parámetros de configuración globales
+# Extraer parámetros de configuración globales de la base de datos
 conn = sqlite3.connect('gc_saint_ecosistema.db')
 cfg = pd.read_sql_query("SELECT * FROM configuracion WHERE id=1", conn).iloc[0]
 conn.close()
