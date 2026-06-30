@@ -111,9 +111,9 @@ if menu == "📊 Dashboard":
 
     st.write("---")
     
-    # Listas de datos para los reportes visuales blindadas contra vacíos
-    cantidades_vendedores = [4500, 3200, 2900, 4100, 1500, 6200]
-    cantidades_top = [120, 95, 45]
+    # Listas de datos estables fijadas para evitar fallos de renderizado
+    cantidades_vendedores = [1420, 1150, 980, 710, 620, 430]
+    cantidades_top = [450, 310, 183]
     valores_pie = [35.5, 42.1, 22.4]
 
     st.markdown("### 📈 REPORTES KPI (EQUIPO DE VENTAS)")
@@ -160,15 +160,18 @@ if menu == "📊 Dashboard":
         df_hueso = pd.read_sql_query("SELECT id, nombre, stock, dias_stock FROM inventario WHERE dias_stock >= 15", conn)
         conn.close()
         
-        for idx, row in df_hueso.iterrows():
-            col_t, col_b = st.columns()
-            with col_t:
-                st.write(f"📦 **{row['nombre']}**  \nStock: {row['stock']} | Días: {row['dias_stock']}")
-            with col_b:
-                if st.button("PROMO", key=f"promo_{row['id']}"):
-                    msg = f"🎉 *¡OFERTA FLASH!* 🎉\n\nTenemos disponible en nuestros almacenes:\n📦 *{row['nombre']}*\n⚡ ¡Escríbenos antes de que se agote el lote!"
-                    link = f"https://whatsapp.com{urllib.parse.quote(msg)}"
-                    st.markdown(f"[📲 Enviar por WhatsApp]({link})")
+        if df_hueso.empty:
+            st.info("No hay productos con baja rotación crítica.")
+        else:
+            for idx, row in df_hueso.iterrows():
+                col_t, col_b = st.columns([2, 1])
+                with col_t:
+                    st.write(f"📦 **{row['nombre']}**\nStock: {row['stock']} | Días: {row['dias_stock']}")
+                with col_b:
+                    if st.button("PROMO", key=f"promo_{row['id']}"):
+                        msg = f"🎉 *¡OFERTA FLASH!* 🎉\n\nTenemos disponible en nuestros almacenes:\n📦 *{row['nombre']}*\n⚡ ¡Escríbenos antes de que se agote el lote!"
+                        link = f"https://whatsapp.com{urllib.parse.quote(msg)}"
+                        st.markdown(f"[📲 Enviar]({link})")
 
 # =====================================================================
 # PESTAÑA 2: CARGA DE INVENTARIO
@@ -181,5 +184,3 @@ elif menu == "📦 Inventario (Carga)":
         with cc1:
             id_sku = st.number_input("ID Código SKU", min_value=1000, max_value=9999, value=1100)
             nombre = st.text_input("Descripción del Producto / Marca", placeholder="Ej: TRULULU AROS 36BX50U")
-            costo_usd = st.number_input("Costo de Adquisición (USD)", min_value=0.0, format="%.2f")
-        with cc2:
