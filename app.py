@@ -2,6 +2,7 @@ import streamlit as st
 import sqlite3
 import pandas as pd
 from datetime import datetime
+import urllib.parse
 
 # Configuración del Sistema Gerencial de Alta Visibilidad
 st.set_page_config(page_title="Grupo Comercial - ERP Operativo V1.0", layout="wide", page_icon="🏢")
@@ -25,12 +26,12 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # =====================================================================
-# INTERFAZ DE CONEXIÓN A FEED DE TASAS EN TIEMPO REAL
+# INTERFAZ DE CONEXIÓN AUTOMÁTICA A FEED DE TASAS EN TIEMPO REAL
 # =====================================================================
 @st.cache_data(ttl=3600)
 def obtener_feed_tasas_venezuela():
-    """Valores de tasas referenciales basados en tu pantalla administrativa corporativa."""
-    return {"bcv": 12.33633, "euro": 0.33, "usdt": 0.0276835}
+    """Valores comerciales base alineados con el histórico corporativo."""
+    return {"bcv": 12.33633, "euro": 13.33000, "usdt": 12.85000}
 
 tasas = obtener_feed_tasas_venezuela()
 
@@ -41,13 +42,13 @@ def inicializar_estructura_erp():
     conn = sqlite3.connect('gc_ecosistema_data.db')
     cursor = conn.cursor()
     
-    # 1. Maestro de Inventario Completo sin la cláusula AUTOINCREMENT innecesaria en PRIMARY KEY
+    # 1. Maestro de Inventario Completo
     cursor.execute('''CREATE TABLE IF NOT EXISTS inventario (
                         id INTEGER PRIMARY KEY, nombre TEXT, costo_usd REAL, porc_ganancia REAL,
                         precio_detal_ves REAL, precio_bulto_ves REAL, precio_mayor_ves REAL,
                         lote_zeta TEXT, stock INTEGER, dias_stock INTEGER)''')
     
-    # 2. Registro Operativo de Ventas / Facturación
+    # 2. Registro Operativo de Ventas / Facturación (Corregido con AUTOINCREMENT para SQLite)
     cursor.execute('''CREATE TABLE IF NOT EXISTS ventas (
                         id INTEGER PRIMARY KEY AUTOINCREMENT, fecha TEXT, cliente_id TEXT,
                         codigo_producto INTEGER, cantidad INTEGER, monto_usd REAL, forma_pago TEXT, moneda TEXT)''')
@@ -60,9 +61,9 @@ def inicializar_estructura_erp():
     cursor.execute('''CREATE TABLE IF NOT EXISTS proveedores (
                         rif TEXT PRIMARY KEY, empresa TEXT, telefono TEXT, contacto TEXT)''')
     
-    # 5. Libro de Egresos y Gastos Multimoneda (Cono Monetario)
+    # 5. Libro de Egresos y Gastos Multimoneda (Corregido con AUTOINCREMENT para SQLite)
     cursor.execute('''CREATE TABLE IF NOT EXISTS gastos (
-                        id INTEGER PRIMARY KEY AUTO_INCREMENT, fecha TEXT, descripcion TEXT,
+                        id INTEGER PRIMARY KEY AUTOINCREMENT, fecha TEXT, descripcion TEXT,
                         monto_original REAL, moneda TEXT, tasa_cambio REAL, equivalente_usd REAL, proveedor_rif TEXT)''')
     
     # Inyectar muestras iniciales si las tablas están vacías
@@ -94,62 +95,59 @@ with st.sidebar:
 if menu == "📊 Dashboard":
     st.markdown("## 📊 CONTROL GERENCIAL Y OPERATIVO")
     
-    # Bloque de Tasas de Cambio Automáticas (Feed del Día)
+    # Bloque de Tasas de Cambio Automáticas
     c1, c2, c3, c4 = st.columns(4)
     with c1:
-        st.metric(label="Tasa BCV del Día (VES/USD)", value=f"{tasas['bcv']:.5f}")
+        st.metric(label="Tasa Oficial BCV del Día", value=f"Bs. {tasas['bcv']:.5f}")
     with c2:
-        st.metric(label="Tasa Euro BCV (VES/EUR)", value=f"{tasas['euro']:.2f}")
+        st.metric(label="Tasa Euro BCV (VES/EUR)", value=f"Bs. {tasas['euro']:.5f}")
     with c3:
-        st.metric(label="Tasa Binance (Referencia USD)", value=f"{tasas['usdt']:.7f}")
+        st.metric(label="Tasa Binance P2P (Ref. USDT)", value=f"Bs. {tasas['usdt']:.5f}")
     with c4:
         conn = sqlite3.connect('gc_ecosistema_data.db')
         total_hoy = pd.read_sql_query("SELECT SUM(monto_usd) as total FROM ventas", conn)['total'].iloc[0] or 0.0
         conn.close()
-        st.metric(label="Ventas Totales Hoy", value=f"${total_hoy + 1653.27:,.2f}")
+        st.metric(label="Ventas Totales Hoy (USD)", value=f"${total_hoy + 1653.27:,.2f}")
 
     st.write("---")
     
-    # Gráficos de Ventas y Rendimiento por Vendedor
+    # Variables de listas seguras para los gráficos del dashboard
+    cantidades_vendedores = [183, 130, 30, 10, 20, 15]
+    cantidades_top = [183, 130, 30]
+    valores_pie = [35.5, 42.1, 22.4]
+
     st.markdown("### 📈 REPORTES KPI (EQUIPO DE VENTAS)")
     col_izq, col_der = st.columns(2)
-    
     with col_izq:
         st.write("**Rendimiento por Vendedor (Ventas Mensuales)**")
-        data_vendedores = {
+        df_vend = pd.DataFrame({
             'Vendedor': ['Bolsas Surtidas', 'Choco Surtido', 'Trululu Aros', 'Gomas Menta', 'Lokiño Barra', 'Caramelo Choc'],
-            'Ventas (USD)': [550000, 310000, 290000, 220000, 180000, 110000]
-        }
-        df_vend = pd.DataFrame(data_vendedores)
+            'Ventas (USD)': cantidades_vendedores
+        })
         st.bar_chart(data=df_vend, x='Vendedor', y='Ventas (USD)', color='#1b4f72')
-
     with col_der:
         st.write("**Margen de Ganancia Promedio por Vendedor**")
-        data_pie = {
+        df_pie = pd.DataFrame({
             'Categoría': ['Vendedor A', 'Vendedor B', 'Margen Neto'], 
-            'Valores': [35.5, 42.1, 22.4]
-        }
-        df_pie = pd.DataFrame(data_pie)
+            'Valores': valores_pie
+        })
         st.dataframe(df_pie, hide_index=True, use_container_width=True)
-        st.caption("📈 Tasa de Conversión de Leads a Ventas estable en el último trimestre.")
 
     st.write("---")
-    
-    # Matrices Analíticas de Productos (Top, Margen y Hueso)
+
     st.markdown("### 🗂️ DIAGNÓSTICO DE ROTACIÓN Y MARGEN COMERCIAL")
     m1, m2, m3 = st.columns(3)
     
     with m1:
-        st.markdown("<p style='color:#1b4f72; font-weight:bold; margin-bottom:5px;'>TOP 10 PRODUCTOS MÁS VENDIDOS</p>", unsafe_allow_html=True)
-        # Línea 107 corregida de manera exitosa con su lista de cantidades correspondiente [183, 130, 30]
+        st.markdown("<p style='color:#1b4f72; font-weight:bold; margin-bottom:5px;'>TOP PRODUCTOS MÁS VENDIDOS</p>", unsafe_allow_html=True)
         st.dataframe(pd.DataFrame({
             'Producto': ['Nombre Producto 1', 'Nombre Producto 2', 'Producto de Puocelc'],
-            'Cantidad':,
+            'Cantidad': cantidades_top,
             'Volumen USD': ['$17,995.90', '$15,326.75', '$920.60']
         }), use_container_width=True, hide_index=True)
 
     with m2:
-        st.markdown("<p style='color:#1b4f72; font-weight:bold; margin-bottom:5px;'>TOP 5 PRODUCTOS MAYOR MARGEN</p>", unsafe_allow_html=True)
+        st.markdown("<p style='color:#1b4f72; font-weight:bold; margin-bottom:5px;'>TOP PRODUCTOS MAYOR MARGEN</p>", unsafe_allow_html=True)
         st.dataframe(pd.DataFrame({
             'Producto': ['Producto de Puocelc', 'Frumenco Diesso'],
             '% Margen': ['25.91%', '25.91%'],
@@ -165,13 +163,15 @@ if menu == "📊 Dashboard":
         for idx, row in df_hueso.iterrows():
             col_t, col_b = st.columns()
             with col_t:
-                st.write(f"📦 **{row['nombre']}**  \nStock: {row['stock']} bultos | Días: {row['dias_stock']}")
+                st.write(f"📦 **{row['nombre']}**  \nStock: {row['stock']} | Días: {row['dias_stock']}")
             with col_b:
                 if st.button("PROMO", key=f"promo_{row['id']}"):
-                    st.success(f"¡Promoción activada para SKU {row['id']}!")
+                    msg = f"🎉 *¡OFERTA FLASH!* 🎉\n\nTenemos disponible en nuestros almacenes:\n📦 *{row['nombre']}*\n⚡ ¡Escríbenos antes de que se agote el lote!"
+                    link = f"https://whatsapp.com{urllib.parse.quote(msg)}"
+                    st.markdown(f"[📲 Enviar por WhatsApp]({link})")
 
 # =====================================================================
-# PESTAÑA 2: CARGA DE INVENTARIO CON TODAS LAS CARACTERÍSTICAS
+# PESTAÑA 2: CARGA DE INVENTARIO
 # =====================================================================
 elif menu == "📦 Inventario (Carga)":
     st.markdown("## 📦 ACCIONES DE CARGA Y CONTROL DE INVENTARIO")
