@@ -13,7 +13,7 @@ st.set_page_config(
 )
 
 # =====================================================================
-# 2. SISTEMA DE ESTILOS CSS INYECTADOS
+# 2. SISTEMA DE ESTILOS CSS INYECTADOS (Solo para el Panel Central)
 # =====================================================================
 st.markdown("""
     <style>
@@ -43,31 +43,16 @@ st.markdown("""
     .card-value-dark { font-size: 36px; font-weight: 700; color: #FFFFFF; }
     .welcome-title { font-size: 28px; font-weight: 700; color: #0F172A; }
     .welcome-subtitle { font-size: 14px; color: #64748B; margin-bottom: 20px; }
-    
-    /* Estilo lista para Tasas */
-    .tasa-item {
-        background-color: #FFFFFF;
-        padding: 10px 14px;
-        border-radius: 8px;
-        border: 1px solid #E2E8F0;
-        margin-bottom: 8px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-    .tasa-label { font-size: 12px; font-weight: 700; color: #475569; }
-    .tasa-value { font-size: 15px; font-weight: 700; color: #1E3A8A; }
     </style>
     """, unsafe_allow_html=True)
 
 # =====================================================================
-# 3. AUTOMATIZACIÓN: FUNCIÓN CONEXIÓN BCV EN VIVO (Capa 2)
+# 3. AUTOMATIZACIÓN: FUNCIÓN CONEXIÓN BCV EN VIVO
 # =====================================================================
-@st.cache_data(ttl=3600)  # Guarda en memoria por 1 hora para máxima velocidad
+@st.cache_data(ttl=3600)
 def obtener_tasas_bcv_reales():
     """Consulta internet para traer las tasas oficiales de Venezuela en tiempo real"""
     try:
-        # Usamos una API pública de referencia para el mercado cambiario venezolano
         url = "https://ve.dispotech.workers.dev/"
         respuesta = requests.get(url, timeout=10)
         datos = respuesta.json()
@@ -76,25 +61,24 @@ def obtener_tasas_bcv_reales():
         eur = float(datos['bcv']['eur'])
         return usd, eur
     except Exception:
-        # Valores de respaldo (Backup) por si internet o la API fallan momentáneamente
+        # Valores de respaldo estables
         return 42.35, 45.20
 
-# Carga automática al abrir o refrescar el ERP
+# Carga automática inicial
 tasa_usd_bcv, tasa_eur_bcv = obtener_tasas_bcv_reales()
 
-# Inicialización de variables en el sistema
-if 'tasa_bcb_usd' not in st.session_state or st.sidebar.button("🔄 Actualizar Tasas"):
+# Sincronización con el estado de la sesión
+if 'tasa_bcb_usd' not in st.session_state:
     st.session_state.tasa_bcb_usd = tasa_usd_bcv
+if 'tasa_bcb_eur' not in st.session_state:
     st.session_state.tasa_bcb_eur = tasa_eur_bcv
-
 if 'tasa_binance' not in st.session_state:
     st.session_state.tasa_binance = 46.50
 
-# Sincronización de la Referencia Máster según Binance P2P
 st.session_state.referencia_master = st.session_state.tasa_binance
 
 # =====================================================================
-# 4. PANEL IZQUIERDO: CONTROL CAMBIARIO EN LISTA VERTICAL
+# 4. PANEL IZQUIERDO: CONTROL CAMBIARIO EN COMPONENTES NATIVOS
 # =====================================================================
 st.sidebar.markdown("## ⚜️ GC")
 st.sidebar.markdown("### Grupo Comercial C.A.")
@@ -103,19 +87,21 @@ st.sidebar.markdown("---")
 
 st.sidebar.markdown("### 🔄 CONTROL CAMBIARIO")
 
-# Estructura en lista vertical para las tasas BCV (Evita que el texto se corte)
-st.sidebar.markdown(f"""
-    <div class="tasa-item">
-        <span class="tasa-label">💵 BCV USD</span>
-        <span class="tasa-value">Bs. {st.session_state.tasa_bcb_usd:.2f}</span>
-    </div>
-    <div class="tasa-item">
-        <span class="tasa-label">💶 BCV EUR</span>
-        <span class="tasa-value">Bs. {st.session_state.tasa_bcb_eur:.2f}</span>
-    </div>
-""", unsafe_allow_html=True)
+# Botón nativo estable
+if st.sidebar.button("🔄 Actualizar Tasas BCV", use_container_width=True):
+    st.cache_data.clear()
+    tasa_usd_bcv, tasa_eur_bcv = obtener_tasas_bcv_reales()
+    st.session_state.tasa_bcb_usd = tasa_usd_bcv
+    st.session_state.tasa_bcb_eur = tasa_eur_bcv
+    st.rerun()
 
-# Entrada manual de Binance justo debajo de la lista
+st.sidebar.markdown(" ")
+
+# Lista vertical usando cajas nativas para garantizar cero errores visuales de Node
+st.sidebar.info(f"*💵 BCV USD:*  \nBs. {st.session_state.tasa_bcb_usd:.2f}")
+st.sidebar.info(f"*💶 BCV EUR:*  \nBs. {st.session_state.tasa_bcb_eur:.2f}")
+
+# Entrada manual de Binance
 nueva_tasa = st.sidebar.number_input(
     "Tasa Binance P2P (Manual):", 
     min_value=0.0, 
@@ -126,7 +112,7 @@ if nueva_tasa != st.session_state.tasa_binance:
     st.session_state.tasa_binance = nueva_tasa
     st.rerun()
 
-st.sidebar.info(f"*REFERENCIA MASTER:* Bs. {st.session_state.referencia_master:.2f}")
+st.sidebar.warning(f"*REFERENCIA MASTER:*  \nBs. {st.session_state.referencia_master:.2f}")
 st.sidebar.markdown("---")
 
 # Menú de Operaciones
