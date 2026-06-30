@@ -78,7 +78,7 @@ inicializar_estructura_saint_erp()
 
 # Extraer parámetros de configuración globales de la base de datos
 conn = sqlite3.connect('gc_saint_ecosistema.db')
-cfg = pd.read_sql_query("SELECT * FROM configuracion WHERE id=1", conn).iloc[0]
+cfg = pd.read_sql_query("SELECT * FROM configuracion WHERE id=1", conn).iloc
 conn.close()
 
 # Configuración de página de Streamlit
@@ -122,9 +122,9 @@ if menu == "📊 Panel de Inicio / KPIs":
     ventas_df = pd.read_sql_query("SELECT SUM(total_ves) as total_ves, SUM(equivalente_usd) as total_usd, SUM(comision_ganada_usd) as comision FROM ventas WHERE estatus='Facturado'", conn)
     conn.close()
     
-    acumulado_ves = ventas_df['total_ves'].iloc[0] if not ventas_df.empty and ventas_df['total_ves'].iloc[0] is not None else 0.0
-    acumulado_usd = ventas_df['total_usd'].iloc[0] if not ventas_df.empty and ventas_df['total_usd'].iloc[0] is not None else 0.0
-    acumulado_comision = ventas_df['comision'].iloc[0] if not ventas_df.empty and ventas_df['comision'].iloc[0] is not None else 0.0
+    acumulado_ves = ventas_df['total_ves'].iloc if not ventas_df.empty and ventas_df['total_ves'].iloc is not None else 0.0
+    acumulado_usd = ventas_df['total_usd'].iloc if not ventas_df.empty and ventas_df['total_usd'].iloc is not None else 0.0
+    acumulado_comision = ventas_df['comision'].iloc if not ventas_df.empty and ventas_df['comision'].iloc is not None else 0.0
     
     c1, c2, c3, c4 = st.columns(4)
     with c1: st.metric(label="Tasa BCV Referencial", value=f"Bs. {cfg['tasa_bcv']:.5f}")
