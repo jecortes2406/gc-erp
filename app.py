@@ -3,6 +3,8 @@ import pandas as pd
 import urllib.request
 import json
 
+
+from database_manager import init_db
 # =====================================================================
 # 1. CONFIGURACIÓN DE LA PÁGINA Y ESTADOS GLOBALES
 # =====================================================================
@@ -12,7 +14,7 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded"
 )
-
+init_db()
 # Inicialización de variables de estado para persistencia
 if 'empresa' not in st.session_state:
     st.session_state.empresa = "Grupo Comercial C.A."
