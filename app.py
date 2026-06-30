@@ -1,32 +1,43 @@
 import streamlit as st
 import sqlite3
 import pandas as pd
+from streamlit_option_menu import option_menu
 
-# Inicializar Base de Datos
-conn = sqlite3.connect('gc_erp_pro.db', check_same_thread=False)
-c = conn.cursor()
-# Tabla de Inventario con categorías y comisión específica por producto
-c.execute('''CREATE TABLE IF NOT EXISTS inventario 
-             (id INTEGER PRIMARY KEY, nombre TEXT, categoria TEXT, p_bulto REAL, p_mayor REAL, p_detal REAL, comision_pct REAL)''')
-# Tabla de Ventas con detalle de método de pago
-c.execute('''CREATE TABLE IF NOT EXISTS ventas 
-             (id INTEGER PRIMARY KEY, fecha DATE, vendedor TEXT, producto TEXT, metodo_pago TEXT, monto_usdt REAL, comision_ganada REAL)''')
-conn.commit()
+# Configuración Estética (Rojo Carmesí y Bronce)
+st.set_page_config(page_title="GC ERP Pro", layout="wide")
+st.markdown("""
+    <style>
+    [data-testid="stSidebar"] {background-color: #fdf5f5;}
+    .nav-link {color: #990000 !important;}
+    .nav-link-selected {background-color: #CD7F32 !important; color: white !important;}
+    </style>
+""", unsafe_allow_html=True)
 
-# --- INTERFAZ ---
-st.title("🚀 GC ERP Enterprise")
-menu = st.sidebar.selectbox("Módulo", ["Dashboard", "Inventario y Carga", "Ventas", "Comisiones"])
+# Módulo de Navegación Lateral (Interfaz tipo App)
+with st.sidebar:
+    selected = option_menu("GC ERP", ["Inicio", "Inventario", "Ventas", "Dashboard", "Cuentas"],
+                           icons=['house', 'box', 'cart', 'graph-up', 'list-task'], menu_icon="cast")
 
-if menu == "Inventario y Carga":
-    st.subheader("Carga Profesional de Inventario")
-    col1, col2 = st.columns(2)
-    nombre = col1.text_input("Nombre del Producto")
-    cat = col2.text_input("Categoría")
-    b = col1.number_input("Precio Bulto")
-    m = col2.number_input("Precio Mayor")
-    d = col1.number_input("Precio Detal")
-    com = col2.number_input("Comisión % por Producto")
+# Lógica del Dashboard con KPIs de Margen
+if selected == "Dashboard":
+    st.title("📊 Análisis de Rendimiento")
+    conn = sqlite3.connect('gc_erp_pro.db')
+    df_ventas = pd.read_sql("SELECT * FROM ventas", conn)
     
-    if st.button("Registrar Producto"):
-        c.execute("INSERT INTO inventario (nombre, categoria, p_bulto, p_mayor, p_detal, comision_pct) VALUES (?,?,?,?,?,?)", (nombre, cat, b, m, d, com))
-        conn.commit()
+    if not df_ventas.empty:
+        col1, col2, col3 = st.columns(3)
+        # KPI: Más vendido
+        top_prod = df_ventas.groupby('producto')['monto_usdt'].sum().idxmax()
+        # KPI: Menos vendido
+        low_prod = df_ventas.groupby('producto')['monto_usdt'].sum().idxmin()
+        
+        col1.metric("Producto Estrella", top_prod)
+        col2.metric("Rotación Baja", low_prod)
+        st.bar_chart(df_ventas.groupby('producto')['monto_usdt'].sum())
+    else:
+        st.info("Sin datos para procesar métricas.")
+
+elif selected == "Inventario":
+    # Aquí iría tu carga con precio de compra, moneda y categoría
+    st.subheader("📦 Control de Stock")
+    # ... (estructura de carga con categorías y costos)
