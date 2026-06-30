@@ -3,41 +3,65 @@ import sqlite3
 import pandas as pd
 from streamlit_option_menu import option_menu
 
-# Configuración Estética (Rojo Carmesí y Bronce)
+# Configuración Estética
 st.set_page_config(page_title="GC ERP Pro", layout="wide")
-st.markdown("""
-    <style>
+st.markdown("""<style>
     [data-testid="stSidebar"] {background-color: #fdf5f5;}
     .nav-link {color: #990000 !important;}
     .nav-link-selected {background-color: #CD7F32 !important; color: white !important;}
-    </style>
-""", unsafe_allow_html=True)
+    </style>""", unsafe_allow_html=True)
 
-# Módulo de Navegación Lateral (Interfaz tipo App)
+# Base de Datos
+conn = sqlite3.connect('gc_erp_pro.db', check_same_thread=False)
+c = conn.cursor()
+c.execute('''CREATE TABLE IF NOT EXISTS inventario (id INTEGER PRIMARY KEY, nombre TEXT, cat TEXT, cost REAL, p_bulto REAL, p_mayor REAL, p_detal REAL, comision REAL)''')
+c.execute('''CREATE TABLE IF NOT EXISTS ventas (id INTEGER PRIMARY KEY, fecha DATE, vendedor TEXT, producto TEXT, precio_final REAL, metodo TEXT, comision_ganada REAL)''')
+conn.commit()
+
+# Menú
 with st.sidebar:
-    selected = option_menu("GC ERP", ["Inicio", "Inventario", "Ventas", "Dashboard", "Cuentas"],
-                           icons=['house', 'box', 'cart', 'graph-up', 'list-task'], menu_icon="cast")
+    selected = option_menu("GC ERP", ["Dashboard", "Inventario", "Ventas"], icons=['graph-up', 'box', 'cart'])
 
-# Lógica del Dashboard con KPIs de Margen
-if selected == "Dashboard":
-    st.title("📊 Análisis de Rendimiento")
-    conn = sqlite3.connect('gc_erp_pro.db')
-    df_ventas = pd.read_sql("SELECT * FROM ventas", conn)
-    
-    if not df_ventas.empty:
-        col1, col2, col3 = st.columns(3)
-        # KPI: Más vendido
-        top_prod = df_ventas.groupby('producto')['monto_usdt'].sum().idxmax()
-        # KPI: Menos vendido
-        low_prod = df_ventas.groupby('producto')['monto_usdt'].sum().idxmin()
+if selected == "Inventario":
+    st.subheader("📦 Carga de Inventario")
+    with st.form("carga"):
+        nombre = st.text_input("Producto")
+        cat = st.text_input("Categoría")
+        cost = st.number_input("Costo de Compra (USDT)")
+        pb = st.number_input("Precio Bulto")
+        pm = st.number_input("Precio Mayor")
+        pd = st.number_input("Precio Detal")
+        com = st.number_input("Comisión Vendedor (%)")
+        if st.form_submit_button("Guardar Producto"):
+            c.execute("INSERT INTO inventario VALUES (NULL,?,?,?,?,?,?,?)", (nombre,cat,cost,pb,pm,pd,com))
+            conn.commit()
+            st.success("Producto guardado")
+
+elif selected == "Ventas":
+    st.subheader("🛒 Facturación")
+    prods = pd.read_sql("SELECT * FROM inventario", conn)
+    if not prods.empty:
+        prod_sel = st.selectbox("Producto", prods['nombre'])
+        tipo_precio = st.radio("Seleccionar Tipo de Precio", ["Bulto", "Mayor", "Detal"])
+        vendedor = st.text_input("Vendedor")
+        metodo = st.selectbox("Pago", ["Efectivo USD", "Efectivo VES", "Pago Móvil"])
         
-        col1.metric("Producto Estrella", top_prod)
-        col2.metric("Rotación Baja", low_prod)
-        st.bar_chart(df_ventas.groupby('producto')['monto_usdt'].sum())
-    else:
-        st.info("Sin datos para procesar métricas.")
+        # Obtener valores
+        p = prods[prods['nombre'] == prod_sel].iloc[0]
+        precio_vta = p['p_bulto'] if tipo_precio == "Bulto" else (p['p_mayor'] if tipo_precio == "Mayor" else p['p_detal'])
+        com_pct = p['comision']
+        
+        st.write(f"### Precio a cobrar: {precio_vta} USDT")
+        if st.button("Procesar Venta"):
+            com_ganada = precio_vta * (com_pct/100)
+            c.execute("INSERT INTO ventas VALUES (NULL, DATE('now'),?,?,?,?,?)", (vendedor, prod_sel, precio_vta, metodo, com_ganada))
+            conn.commit()
+            st.success("Venta procesada")
+    else: st.warning("Cargue productos primero")
 
-elif selected == "Inventario":
-    # Aquí iría tu carga con precio de compra, moneda y categoría
-    st.subheader("📦 Control de Stock")
-    # ... (estructura de carga con categorías y costos)
+elif selected == "Dashboard":
+    st.title("📈 Métricas")
+    df = pd.read_sql("SELECT * FROM ventas", conn)
+    if not df.empty:
+        st.metric("Venta Total", f"{df['precio_final'].sum()} USDT")
+        st.bar_chart(df.groupby('producto')['precio_final'].sum())
