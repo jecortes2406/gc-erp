@@ -2,14 +2,38 @@ import streamlit as st
 import pandas as pd
 import sqlite3
 
+# --- INICIALIZACIÓN DE LA BASE DE DATOS ---
+def init_db():
+    """Crea la tabla de productos si no existe con la estructura correcta."""
+    conn = sqlite3.connect('inventario.db')
+    cursor = conn.cursor()
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS productos (
+            sku TEXT PRIMARY KEY,
+            nombre TEXT,
+            categoria TEXT,
+            costo_base REAL,
+            moneda_compra TEXT,
+            almacen TEXT,
+            margen_detal REAL,
+            margen_bulto REAL,
+            margen_mayor REAL,
+            existencia_bulto INTEGER,
+            existencia_detal INTEGER,
+            iva_aplicado INTEGER,
+            comision_vendedor REAL
+        )
+    ''')
+    conn.commit()
+    conn.close()
+
 # --- FUNCIONES DE BASE DE DATOS ---
 def obtener_inventario():
     """Recupera todos los productos de la base de datos."""
     conn = sqlite3.connect('inventario.db')
     try:
-        # Intentamos leer la tabla; si no existe, devolvemos un DF vacío
         df = pd.read_sql_query("SELECT * FROM productos", conn)
-    except:
+    except Exception:
         df = pd.DataFrame()
     conn.close()
     return df
@@ -18,12 +42,17 @@ def guardar_producto(datos):
     """Guarda un nuevo producto en la base de datos."""
     conn = sqlite3.connect('inventario.db')
     cursor = conn.cursor()
-    cursor.execute('''INSERT INTO productos (sku, nombre, categoria, costo_base, moneda_compra, almacen, 
-                      margen_detal, margen_bulto, margen_mayor, existencia_bulto, existencia_detal, 
-                      iva_aplicado, comision_vendedor) 
-                      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)''', tuple(datos.values()))
-    conn.commit()
-    conn.close()
+    try:
+        cursor.execute('''INSERT OR REPLACE INTO productos (sku, nombre, categoria, costo_base, moneda_compra, almacen, 
+                          margen_detal, margen_bulto, margen_mayor, existencia_bulto, existencia_detal, 
+                          iva_aplicado, comision_vendedor) 
+                          VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)''', tuple(datos.values()))
+        conn.commit()
+        st.success("✅ ¡Producto guardado con éxito!")
+    except Exception as e:
+        st.error(f"❌ Error al guardar en la base de datos: {e}")
+    finally:
+        conn.close()
 
 # --- INTERFAZ DEL MÓDULO ---
 def mostrar_formulario_inventario():
@@ -67,12 +96,15 @@ def mostrar_formulario_inventario():
             comision = i2.number_input("Comisión Vendedor (%)", min_value=0.0, step=0.5)
             
             if st.form_submit_button("💾 Guardar en Inventario"):
-                datos = {'sku':sku, 'nom':nombre, 'cat':cat, 'costo':costo, 'mon':'USD', 
-                         'alm':'Principal', 'md':margen_detal, 'mb':0, 'mm':margen_mayor, 
-                         'eb':0, 'ed':0, 'iva':iva, 'com':comision}
-                guardar_producto(datos)
-                st.session_state.modo_ingreso = False
-                st.rerun()
+                if not sku or not nombre:
+                    st.error("⚠️ El SKU y el Nombre son campos obligatorios.")
+                else:
+                    datos = {'sku': sku, 'nom': nombre, 'cat': cat, 'costo': costo, 'mon': 'USD', 
+                             'alm': 'Principal', 'md': margen_detal, 'mb': 0, 'mm': margen_mayor, 
+                             'eb': 0, 'ed': 0, 'iva': iva, 'com': comision}
+                    guardar_producto(datos)
+                    st.session_state.modo_ingreso = False
+                    st.rerun()
 
         if st.button("⬅️ Cancelar"):
             st.session_state.modo_ingreso = False
