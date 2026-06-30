@@ -30,7 +30,7 @@ st.markdown("""
 # =====================================================================
 @st.cache_data(ttl=3600)
 def obtener_feed_tasas_venezuela():
-    """Valores comerciales base alineados con el histórico corporativo."""
+    """Valores comerciales base alineados con el histórico de operaciones."""
     return {"bcv": 12.33633, "euro": 13.33000, "usdt": 12.85000}
 
 tasas = obtener_feed_tasas_venezuela()
@@ -48,7 +48,7 @@ def inicializar_estructura_erp():
                         precio_detal_ves REAL, precio_bulto_ves REAL, precio_mayor_ves REAL,
                         lote_zeta TEXT, stock INTEGER, dias_stock INTEGER)''')
     
-    # 2. Registro Operativo de Ventas / Facturación (Corregido con AUTOINCREMENT para SQLite)
+    # 2. Registro Operativo de Ventas / Facturación
     cursor.execute('''CREATE TABLE IF NOT EXISTS ventas (
                         id INTEGER PRIMARY KEY AUTOINCREMENT, fecha TEXT, cliente_id TEXT,
                         codigo_producto INTEGER, cantidad INTEGER, monto_usd REAL, forma_pago TEXT, moneda TEXT)''')
@@ -61,7 +61,7 @@ def inicializar_estructura_erp():
     cursor.execute('''CREATE TABLE IF NOT EXISTS proveedores (
                         rif TEXT PRIMARY KEY, empresa TEXT, telefono TEXT, contacto TEXT)''')
     
-    # 5. Libro de Egresos y Gastos Multimoneda (Corregido con AUTOINCREMENT para SQLite)
+    # 5. Libro de Egresos y Gastos Multimoneda
     cursor.execute('''CREATE TABLE IF NOT EXISTS gastos (
                         id INTEGER PRIMARY KEY AUTOINCREMENT, fecha TEXT, descripcion TEXT,
                         monto_original REAL, moneda TEXT, tasa_cambio REAL, equivalente_usd REAL, proveedor_rif TEXT)''')
@@ -111,8 +111,8 @@ if menu == "📊 Dashboard":
 
     st.write("---")
     
-    # Variables de listas seguras para los gráficos del dashboard
-    cantidades_vendedores = [1200.0, 850.5, 1500.0, 950.0, 600.0, 1100.0]
+    # Listas de datos para los reportes visuales
+    cantidades_vendedores = [1500, 1200, 900, 850, 600, 450]
     cantidades_top = [183, 130, 30]
     valores_pie = [35.5, 42.1, 22.4]
 
@@ -155,31 +155,4 @@ if menu == "📊 Dashboard":
         }), use_container_width=True, hide_index=True)
 
     with m3:
-        st.markdown("<p style='color:#e67e22; font-weight:bold; margin-bottom:5px;'>⚠️ ALERTAS BAJA ROTACIÓN (HUESO)</p>", unsafe_allow_html=True)
-        conn = sqlite3.connect('gc_ecosistema_data.db')
-        df_hueso = pd.read_sql_query("SELECT id, nombre, stock, dias_stock FROM inventario WHERE dias_stock >= 15", conn)
-        conn.close()
-        
-        for idx, row in df_hueso.iterrows():
-            col_t, col_b = st.columns(2)
-            with col_t:
-                st.write(f"📦 **{row['nombre']}**  \nStock: {row['stock']} | Días: {row['dias_stock']}")
-            with col_b:
-                if st.button("PROMO", key=f"promo_{row['id']}"):
-                    msg = f"🎉 *¡OFERTA FLASH!* 🎉\n\nTenemos disponible en nuestros almacenes:\n📦 *{row['nombre']}*\n⚡ ¡Escríbenos antes de que se agote el lote!"
-                    link = f"https://whatsapp.com{urllib.parse.quote(msg)}"
-                    st.markdown(f"[📲 Enviar por WhatsApp]({link})")
-
-# =====================================================================
-# PESTAÑA 2: CARGA DE INVENTARIO
-# =====================================================================
-elif menu == "📦 Inventario (Carga)":
-    st.markdown("## 📦 ACCIONES DE CARGA Y CONTROL DE INVENTARIO")
-    
-    with st.form("form_inventario", clear_on_submit=True):
-        cc1, cc2, cc3 = st.columns(3)
-        with cc1:
-            id_sku = st.number_input("ID Código SKU", min_value=1000, max_value=9999, value=1100)
-            nombre = st.text_input("Descripción del Producto / Marca", placeholder="Ej: TRULULU AROS 36BX50U")
-            costo_usd = st.number_input("Costo de Adquisición (USD)", min_value=0.0, format="%.2f")
-        with cc2:
+        st.markdown("<p style='color:#e67e22;
