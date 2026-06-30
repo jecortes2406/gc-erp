@@ -5,7 +5,7 @@ from datetime import datetime
 import urllib.parse
 
 # =====================================================================
-# MOTOR DE INICIALIZACIÓN Y AUTO-MIGRACIÓN DE BASE DE DATOS CONTABLE
+# MOTOR DE INICIALIZACIÓN Y AUTO-MIGRACIÓN DE BASE DE DATOS
 # =====================================================================
 def inicializar_estructura_erp():
     conn = sqlite3.connect('gc_ecosistema_data_v5.db')
@@ -101,9 +101,9 @@ if menu == "📊 Panel de Inicio":
     ventas_df = pd.read_sql_query("SELECT SUM(total_ves) as total_ves, SUM(equivalente_usd) as total_usd, SUM(comision_ganada_usd) as comision FROM ventas WHERE estatus='Facturado'", conn)
     conn.close()
     
-    acumulado_ves = ventas_df['total_ves'].iloc[0] or 0.0
-    acumulado_usd = ventas_df['total_usd'].iloc[0] or 0.0
-    acumulado_comision = ventas_df['comision'].iloc[0] or 0.0
+    acumulado_ves = ventas_df['total_ves'].iloc[0] if not ventas_df.empty and ventas_df['total_ves'].iloc[0] is not None else 0.0
+    acumulado_usd = ventas_df['total_usd'].iloc[0] if not ventas_df.empty and ventas_df['total_usd'].iloc[0] is not None else 0.0
+    acumulado_comision = ventas_df['comision'].iloc[0] if not ventas_df.empty and ventas_df['comision'].iloc[0] is not None else 0.0
     
     c1, c2, c3, c4 = st.columns(4)
     with c1: st.metric(label="Tasa BCV del Día (Moneda Legal)", value=f"Bs. {cfg['tasa_bcv']:.5f}")
@@ -133,9 +133,9 @@ if menu == "📊 Panel de Inicio":
             st.info("Almacenes en perfecto equilibrio de rotación continua.")
         else:
             for idx, row in df_hueso.iterrows():
-                col_t, col_b = st.columns([3, 1])
+                col_t, col_b = st.columns(2)
                 with col_t:
-                    st.write(f"📦 **{row['nombre']}** | Stock: {row['stock']} bultos | Parado: {row['dias_stock']} días")
+                    st.write(f"📦 **{row['nombre']}**\nStock: {row['stock']} bultos\nParado: {row['dias_stock']} días")
                 with col_b:
                     if st.button("PROMO", key=f"promo_{row['id']}"):
                         msg = f"🎉 *¡OFERTA FLASH DE LIQUIDACIÓN!* 🎉\n\nTenemos en promoción:\n📦 *{row['nombre']}*\n⚡ ¡Escríbenos para aplicar tarifa de remate corporativo!"
@@ -156,6 +156,3 @@ elif menu == "📦 Inventario (Artículos)":
             tipo_item = st.selectbox("Tipo de Ítem", ["Artículo", "Servicio"])
         with cc2:
             costo_usd = st.number_input("Costo de Adquisición (USD por Bulto)", min_value=0.0, format="%.2f")
-            ganancia_porc = st.number_input("% Margen de Utilidad Neto", min_value=0.0, max_value=100.0, value=30.0)
-            lote = st.text_input("Número de Lote (Zeta)", placeholder="Ej: Z-2026")
-        with cc3:
