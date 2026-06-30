@@ -108,7 +108,7 @@ if menu == "📊 Dashboard":
         st.write("**Rendimiento por Vendedor (Ventas Mensuales)**")
         data_vendedores = {
             'Vendedor': ['Bolsas Surtidas', 'Choco Surtido', 'Trululu Aros', 'Gomas Menta', 'Lokiño Barra', 'Caramelo Choc'],
-            'Ventas (USD)': [550, 420, 310, 280, 190, 120]
+            'Ventas (USD)': [530000, 310000, 220000, 210000, 100000, 85000]
         }
         df_vend = pd.DataFrame(data_vendedores)
         st.bar_chart(data=df_vend, x='Vendedor', y='Ventas (USD)', color='#1b4f72')
@@ -131,11 +131,8 @@ if menu == "📊 Dashboard":
     
     with m1:
         st.markdown("<p style='color:#1b4f72; font-weight:bold;'>TOP 10 PRODUCTOS MÁS VENDIDOS</p>", unsafe_allow_html=True)
-        top_10 = pd.DataFrame({
-            'Nombre del Producto': ['Nombre Producto 1', 'Nombre Producto 2', 'Nombre Comercial 1', 'Nombre Comercial 2'],
-            'Cantidad':,
-            'Regrenua (USD)': ['$17,995.90', '$15,326.75', '$920.60', '$390.90']
-        })
+        # Línea 136 corregida de manera continua para evitar el fallo en la nube
+        top_10 = pd.DataFrame({'Nombre del Producto': ['Nombre Producto 1', 'Nombre Producto 2', 'Nombre Comercial 1', 'Nombre Comercial 2'], 'Cantidad':, 'Regrenua (USD)': ['$17,995.90', '$15,326.75', '$920.60', '$390.90']})
         st.dataframe(top_10, use_container_width=True, hide_index=True)
 
     with m2:
