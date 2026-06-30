@@ -106,6 +106,13 @@ modulo_seleccionado = st.sidebar.radio("MENÚ DE OPERACIONES:", modulos)
 # --- CONEXIÓN DEL MÓDULO ---
 if "Gestión / Inventario" == modulo_seleccionado:
     mostrar_formulario_inventario()
+
+# El "else" o "elif" es CRÍTICO para que no se mezclen las pantallas
+elif "Panel Principal / Dashboard" in modulo_seleccionado:
+    # AQUÍ COMIENZA TU DASHBOARD ORIGINAL
+    col_centro, col_derecha = st.columns([3.2, 0.8])
+    with col_centro:
+        # ... (todo tu código del Dashboard original aquí)
 # =====================================================================
 # 5. PANEL CENTRAL
 # =====================================================================
