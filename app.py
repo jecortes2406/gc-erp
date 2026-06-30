@@ -5,30 +5,31 @@ from datetime import datetime
 import urllib.parse
 
 # =====================================================================
-# MOTOR DE INICIALIZACIÓN Y AUTO-MIGRACIÓN DE BASE DE DATOS (ANTI-ERROR)
+# MOTOR DE INICIALIZACIÓN Y AUTO-MIGRACIÓN DE BASE DE DATOS
 # =====================================================================
 def inicializar_estructura_erp():
-    conn = sqlite3.connect('gc_ecosistema_data.db')
+    conn = sqlite3.connect('gc_ecosistema_data_v4.db')
     cursor = conn.cursor()
     
-    # 1. Configuración de Marca, Tasas e Incentivos
+    # 1. Parámetros de Configuración y Tasas del Día
     cursor.execute('''CREATE TABLE IF NOT EXISTS configuracion (
                         id INTEGER PRIMARY KEY, nombre_empresa TEXT, color_marca TEXT,
                         tasa_bcv REAL, tasa_euro REAL, tasa_binance REAL, comision_vendedor_porc REAL)''')
     
-    # 2. Maestro de Inventario Avanzado con 3 Niveles de Precios
+    # 2. Maestro de Inventario con Costo y 3 Tipos de Precios Independientes
     cursor.execute('''CREATE TABLE IF NOT EXISTS inventario (
                         id INTEGER PRIMARY KEY, nombre TEXT, costo_usd REAL, porc_ganancia REAL,
                         precio_detal_ves REAL, precio_bulto_ves REAL, precio_mayor_ves REAL,
                         lote_zeta TEXT, stock INTEGER, dias_stock INTEGER, rotacion TEXT)''')
     
-    # 3. Registro Operativo de Ventas / Facturación Real
+    # 3. Libro de Ventas con Desglose Fiscal Obligatorio (IVA, IGTF, Comisión)
     cursor.execute('''CREATE TABLE IF NOT EXISTS ventas (
                         id INTEGER PRIMARY KEY AUTOINCREMENT, fecha TEXT, cliente_id TEXT, vendedor TEXT,
-                        codigo_producto INTEGER, cantidad INTEGER, precio_aplicado_usd REAL, 
-                        monto_usd REAL, comision_ganada_usd REAL, forma_pago TEXT, moneda TEXT)''')
+                        codigo_producto INTEGER, cantidad INTEGER, precio_aplicado_ves REAL, 
+                        subtotal_ves REAL, iva_ves REAL, igtf_ves REAL, total_ves REAL,
+                        equivalente_usd REAL, comision_ganada_usd REAL, forma_pago TEXT, moneda TEXT)''')
     
-    # 4. Directorio de Clientes y Proveedores
+    # 4. Directorio de Contactos Comerciales
     cursor.execute('''CREATE TABLE IF NOT EXISTS clientes (rif_cedula TEXT PRIMARY KEY, nombre TEXT, telefono TEXT, direccion TEXT)''')
     cursor.execute('''CREATE TABLE IF NOT EXISTS proveedores (rif TEXT PRIMARY KEY, empresa TEXT, telefono TEXT, contacto TEXT)''')
     
@@ -37,48 +38,32 @@ def inicializar_estructura_erp():
                         id INTEGER PRIMARY KEY AUTOINCREMENT, fecha TEXT, descripcion TEXT,
                         monto_original REAL, moneda TEXT, tasa_cambio REAL, equivalente_usd REAL, proveedor_rif TEXT)''')
     
-    # 🛠️ SCRIPT DE AUTO-MIGRACIÓN: Si la base de datos es vieja, inyecta las columnas faltantes para evitar caídas
-    try:
-        cursor.execute("ALTER TABLE ventas ADD COLUMN comision_ganada_usd REAL DEFAULT 0.0")
-    except sqlite3.OperationalError:
-        pass  # La columna ya existe, no se hace nada
-
-    try:
-        cursor.execute("ALTER TABLE ventas ADD COLUMN vendedor TEXT DEFAULT 'Cajero 1'")
-    except sqlite3.OperationalError:
-        pass  # La columna ya existe, no se hace nada
-
-    try:
-        cursor.execute("ALTER TABLE inventario ADD COLUMN rotacion TEXT DEFAULT 'Alta'")
-    except sqlite3.OperationalError:
-        pass
-
-    # Inyectar muestras iniciales si las tablas están vacías
+    # Inyectar muestras comerciales iniciales si el sistema está vacío
     cursor.execute("SELECT COUNT(*) FROM configuracion")
     if cursor.fetchone()[0] == 0:
-        cursor.execute("INSERT INTO configuracion VALUES (1, 'Grupo Comercial', '#1B4F72', 45.50633, 49.33210, 47.85350, 5.0)")
+        cursor.execute("INSERT INTO configuracion VALUES (1, 'Grupo Comercial, C.A.', '#1B4F72', 45.50633, 49.33210, 47.85350, 5.0)")
     
     cursor.execute("SELECT COUNT(*) FROM inventario")
     if cursor.fetchone()[0] == 0:
-        cursor.execute("INSERT INTO inventario VALUES (1061, 'Producto de Puocelc Portal', 0.50, 25.91, 6.45, 15.00, 19.00, 'Z-101', 183, 0, 'Alta')")
-        cursor.execute("INSERT INTO inventario VALUES (1092, 'Producto de Frumenco Diesso (Hueso)', 10.00, 25.91, 129.50, 350.00, 330.00, 'Z-Hueso', 38, 29, 'Hueso')")
-        cursor.execute("INSERT INTO clientes VALUES ('V-12345678', 'Distribuidora Surtidora Central', '584121234567', 'Caracas, Venezuela')")
-        cursor.execute("INSERT INTO proveedores VALUES ('J-99999999', 'Confiterías El Bulto Mayorista', '584149876543', 'Maracay Distribución')")
+        cursor.execute("INSERT INTO inventario VALUES (1061, 'BIANCHI CARAMELO CHOCOLATE 18BX100U', 30.00, 25.00, 1740.00, 1600.00, 1550.00, 'Z-101', 183, 0, 'Alta')")
+        cursor.execute("INSERT INTO inventario VALUES (1092, 'TRULULU AROS 36BX50U (HUESO)', 50.00, 30.00, 3020.00, 2800.00, 2700.00, 'Z-Hueso', 38, 29, 'Hueso')")
+        cursor.execute("INSERT INTO clientes VALUES ('J-123456780', 'Distribuidora Surtidora Central, C.A.', '584121234567', 'Caracas, Distrito Capital')")
+        cursor.execute("INSERT INTO proveedores VALUES ('J-999999990', 'Confiterías El Bulto Mayorista', '584149876543', 'Maracay Almacenes')")
     
     conn.commit()
     conn.close()
 
 inicializar_estructura_erp()
 
-# Extraer parámetros de configuración guardados
-conn = sqlite3.connect('gc_ecosistema_data.db')
+# Extraer parámetros globales de configuración de forma segura
+conn = sqlite3.connect('gc_ecosistema_data_v4.db')
 cfg = pd.read_sql_query("SELECT * FROM configuracion WHERE id=1", conn).iloc[0]
 conn.close()
 
 # Configuración del Entorno de Alta Visibilidad
-st.set_page_config(page_title=f"{cfg['nombre_empresa']} - ERP", layout="wide", page_icon="🏢")
+st.set_page_config(page_title=f"{cfg['nombre_empresa']} - ERP Legal Venezuela", layout="wide", page_icon="🏢")
 
-# Inyección de Estilos CSS basados en la Configuración del Usuario
+# Inyección de Estilos CSS Gerenciales (Fondo Claro, Alta Definición)
 st.markdown(f"""
     <style>
         .main {{ background-color: #f8f9fa; color: #1e293b; }}
@@ -97,8 +82,8 @@ st.markdown(f"""
 
 # --- MENÚ LATERAL IZQUIERDO (SIDEBAR CORPORATIVO) ---
 with st.sidebar:
-    st.markdown(f"<h1 style='text-align: center; margin-bottom:0;'>GC</h1>", unsafe_allow_html=True)
-    st.markdown(f"<p style='text-align: center; font-weight: bold; font-size:12px;'>{cfg['nombre_empresa'].upper()}<br><small style='color:#e67e22;'>ERP INTEGRAL V1.0</small></p>", unsafe_allow_html=True)
+    st.markdown("<h1 style='text-align: center; margin-bottom:0;'>GC</h1>", unsafe_allow_html=True)
+    st.markdown(f"<p style='text-align: center; font-weight: bold; font-size:12px;'>{cfg['nombre_empresa'].upper()}<br><small style='color:#e67e22;'>ERP COMPLIANCE V4.0</small></p>", unsafe_allow_html=True)
     st.write("---")
     menu = st.radio(
         "Módulos Operativos",
@@ -111,62 +96,73 @@ with st.sidebar:
 if menu == "📊 Dashboard / KPIs":
     st.markdown("## 📊 CONTROL GERENCIAL Y MEDIDORES KPI")
     
-    # Fila de Tasas de Cambio en Vivo + Ingresos Totales
-    conn = sqlite3.connect('gc_ecosistema_data.db')
-    ventas_totales_df = pd.read_sql_query("SELECT SUM(monto_usd) as total FROM ventas", conn)
-    comisiones_totales_df = pd.read_sql_query("SELECT SUM(comision_ganada_usd) as total FROM ventas", conn)
-    
-    total_hoy = ventas_totales_df['total'].iloc[0] if not ventas_totales_df.empty and ventas_totales_df['total'].iloc[0] is not None else 0.0
-    total_comision = comisiones_totales_df['total'].iloc[0] if not comisiones_totales_df.empty and comisiones_totales_df['total'].iloc[0] is not None else 0.0
+    # Lectura financiera del cono monetario consolidado
+    conn = sqlite3.connect('gc_ecosistema_data_v4.db')
+    ventas_df = pd.read_sql_query("SELECT SUM(total_ves) as total_ves, SUM(equivalente_usd) as total_usd, SUM(comision_ganada_usd) as comision FROM ventas", conn)
     conn.close()
     
+    acumulado_ves = ventas_df['total_ves'].iloc[0] or 0.0
+    acumulado_usd = ventas_df['total_usd'].iloc[0] or 0.0
+    acumulado_comision = ventas_df['comision'].iloc[0] or 0.0
+    
     c1, c2, c3, c4 = st.columns(4)
-    with c1: st.metric(label="Tasa BCV Oficial", value=f"Bs. {cfg['tasa_bcv']:.5f}")
-    with c2: st.metric(label="Tasa Euro Oficial", value=f"Bs. {cfg['tasa_euro']:.5f}")
-    with c3: st.metric(label="Tasa Binance P2P", value=f"Bs. {cfg['tasa_binance']:.5f}")
-    with c4: st.metric(label="Ventas Consolidadas (USD)", value=f"${total_hoy + 1653.27:,.2f}")
+    with c1: st.metric(label="Tasa BCV Oficial (Referencial)", value=f"Bs. {cfg['tasa_bcv']:.5f}")
+    with c2: st.metric(label="Ventas en Moneda Legal (VES)", value=f"Bs. {acumulado_ves:,.2f}")
+    with c3: st.metric(label="Contravalor Ref. Almacén (USD)", value=f"${acumulado_usd:,.2f} USD")
+    with c4: st.metric(label="Total Comisiones Vendedores", value=f"${acumulado_comision:,.2f} USD")
 
     st.write("---")
     
-    # Sección de Gráficos e Indicadores de Rendimiento de Ventas
     col_izq, col_der = st.columns(2)
     with col_izq:
-        st.write("**Rendimiento del Equipo de Ventas (USD)**")
-        conn = sqlite3.connect('gc_ecosistema_data.db')
-        df_agrupado_vendedores = pd.read_sql_query("SELECT vendedor, SUM(monto_usd) as Total FROM ventas GROUP BY vendedor", conn)
+        st.write("**Volumen de Ventas por Operador Financiero (VES)**")
+        conn = sqlite3.connect('gc_ecosistema_data_v4.db')
+        df_vendedores = pd.read_sql_query("SELECT vendedor, SUM(total_ves) as Total FROM ventas GROUP BY vendedor", conn)
         conn.close()
-        
-        if df_agrupado_vendedores.empty:
-            df_agrupado_vendedores = pd.DataFrame({'vendedor': ['Cajero Predeterminado'], 'Total': [1653.27]})
-        st.bar_chart(data=df_agrupado_vendedores, x='vendedor', y='Total', color=cfg['color_marca'])
+        if df_vendedores.empty:
+            df_vendedores = pd.DataFrame({'vendedor': ['Sin Operaciones'], 'Total': [0.0]})
+        st.bar_chart(data=df_vendedores, x='vendedor', y='Total', color=cfg['color_marca'])
         
     with col_der:
-        st.write("**Resumen Operativo de Comisiones Acumuladas**")
-        st.metric(label="Total Comisiones Asignadas (USD)", value=f"${total_comision:,.2f}")
-        st.caption(f"Incentivo calculado bajo el parámetro del {cfg['comision_vendedor_porc']}% sobre el volumen neto facturado por cada SKU.")
+        st.write("**Margen de Contribución por Canal Financiero**")
+        st.dataframe(pd.DataFrame({
+            'Canal de Distribución': ['Venta al Detal (Minorista)', 'Despacho por Caja/Bulto', 'Volumen Mayorista'],
+            'Margen de Utilidad Promedio': ['25.00% - 30.00%', '15.00% - 18.00%', '10.00% - 12.00%'],
+            'Estatus de Cumplimiento': ['✅ Óptimo', '✅ Óptimo', '✅ Regulado']
+        }), hide_index=True, use_container_width=True)
 
     st.write("---")
     
-    # Matrices Analíticas de Rotación y Productos Hueso
-    st.markdown("### 🗂️ ANÁLISIS DE ROTACIÓN Y MARGENES DE PRODUCTOS")
+    # Matrices Analíticas de Rotación y Módulo de Ofertas Flash
+    st.markdown("### 🗂️ MONITOREO DE ROTACIÓN Y PRODUCTOS HUESO")
     m1, m2, m3 = st.columns(3)
     
     with m1:
-        st.markdown("<p style='font-weight:bold; margin-bottom:5px;'>TOP PRODUCTOS MÁS VENDIDOS</p>", unsafe_allow_html=True)
-        conn = sqlite3.connect('gc_ecosistema_data.db')
-        top_prod_df = pd.read_sql_query("SELECT i.nombre as Producto, SUM(v.cantidad) as Cantidad FROM ventas v JOIN inventario i ON v.codigo_producto = i.id GROUP BY i.nombre ORDER BY Cantidad DESC LIMIT 5", conn)
+        st.markdown("<p style='font-weight:bold; margin-bottom:5px;'>TOP PRODUCTOS MÁS DESPACHADOS</p>", unsafe_allow_html=True)
+        conn = sqlite3.connect('gc_ecosistema_data_v4.db')
+        top_prod_df = pd.read_sql_query("SELECT i.nombre as Producto, SUM(v.cantidad) as 'Bultos Vendidos' FROM ventas v JOIN inventario i ON v.codigo_producto = i.id GROUP BY i.nombre ORDER BY 'Bultos Vendidos' DESC LIMIT 5", conn)
         conn.close()
         if top_prod_df.empty:
-            top_prod_df = pd.DataFrame({'Producto': ['Muestra Producto 1'], 'Cantidad': [150]})
+            top_prod_df = pd.DataFrame({'Producto': ['No se registran facturas'], 'Bultos Vendidos': [0]})
         st.dataframe(top_prod_df, use_container_width=True, hide_index=True)
 
     with m2:
-        st.markdown("<p style='font-weight:bold; margin-bottom:5px;'>TOP PRODUCTOS MAYOR MARGEN</p>", unsafe_allow_html=True)
-        conn = sqlite3.connect('gc_ecosistema_data.db')
+        st.markdown("<p style='font-weight:bold; margin-bottom:5px;'>ESTRUCTURA DE MÁRGENES ESTABLECIDOS</p>", unsafe_allow_html=True)
+        conn = sqlite3.connect('gc_ecosistema_data_v4.db')
         df_margen = pd.read_sql_query("SELECT nombre as Producto, porc_ganancia as 'Margen %' FROM inventario ORDER BY porc_ganancia DESC LIMIT 5", conn)
         conn.close()
         st.dataframe(df_margen, use_container_width=True, hide_index=True)
 
     with m3:
         st.markdown("<p style='color:#e67e22; font-weight:bold; margin-bottom:5px;'>⚠️ ALERTAS BAJA ROTACIÓN (HUESO)</p>", unsafe_allow_html=True)
-        conn = sqlite3.connect('gc_ecosistema_data.db')
+        conn = sqlite3.connect('gc_ecosistema_data_v4.db')
+        df_hueso = pd.read_sql_query("SELECT id, nombre, stock, dias_stock FROM inventario WHERE dias_stock >= 15", conn)
+        conn.close()
+        
+        if df_hueso.empty:
+            st.info("Almacenes en perfecto equilibrio de rotación.")
+        else:
+            for idx, row in df_hueso.iterrows():
+                col_t, col_b = st.columns(2)
+                with col_t:
+                    st.write(f"📦 **{row['nombre']}**  \nStock: {row['stock']} | Días: {row['dias_stock']}")
