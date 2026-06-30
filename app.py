@@ -3,9 +3,9 @@ import pandas as pd
 import urllib.request
 import json
 
-
 from database_manager import init_db
 from modulo_inventario import mostrar_formulario_inventario
+
 # =====================================================================
 # 1. CONFIGURACIÓN DE LA PÁGINA Y ESTADOS GLOBALES
 # =====================================================================
@@ -16,6 +16,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 init_db()
+
 # Inicialización de variables de estado para persistencia
 if 'empresa' not in st.session_state:
     st.session_state.empresa = "Grupo Comercial C.A."
@@ -50,7 +51,6 @@ st.markdown("""
 def obtener_tasas_bcv_reales():
     try:
         url = "https://ve.dispotech.workers.dev/"
-        # Añadimos un User-Agent explícito para evitar bloqueos
         req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
         with urllib.request.urlopen(req, timeout=10) as response:
             datos = json.loads(response.read().decode())
@@ -86,6 +86,7 @@ st.session_state.tasa_binance = st.sidebar.number_input(
 st.sidebar.warning(f"REFERENCIA MASTER: Bs. {st.session_state.tasa_binance:.2f}")
 st.sidebar.markdown("---")
 
+# Lista de opciones del menú
 modulos = [
     "📊 Panel Principal / Dashboard",
     "📦 Órdenes Online",
@@ -103,49 +104,32 @@ modulos = [
 ]
 modulo_seleccionado = st.sidebar.radio("MENÚ DE OPERACIONES:", modulos)
 
-# --- CONEXIÓN DEL MÓDULO ---
-if "Gestión / Inventario" in modulo_seleccionado:
+
+# =====================================================================
+# 5. CONTROLADOR DE ENRUTAMIENTO (PANEL CENTRAL)
+# =====================================================================
+
+# Opción 1: Gestión de Inventario
+if "🗂️ Gestión / Inventario" == modulo_seleccionado:
     mostrar_formulario_inventario()
 
-# El "elif" es la clave: asegura que si entra a uno, no intente entrar al otro
-elif "Panel Principal / Dashboard" in modulo_seleccionado:
+# Opción 2: Panel Principal / Dashboard
+elif "📊 Panel Principal / Dashboard" == modulo_seleccionado:
     col_centro, col_derecha = st.columns([3.2, 0.8])
-    with col_centro:
-        st.markdown(f'<p class="welcome-title">Dashboard | {st.session_state.empresa}</p>', unsafe_allow_html=True)
-        st.markdown('<p class="welcome-subtitle">Aquí tienes el resumen operativo y financiero al momento.</p>', unsafe_allow_html=True)
-        
-# --- CONEXIÓN DEL MÓDULO ---
-if "Gestión / Inventario" == modulo_seleccionado:
-    mostrar_formulario_inventario()
-
-elif "Panel Principal / Dashboard" == modulo_seleccionado:
-    col_centro, col_derecha = st.columns([3.2, 0.8])
-    with col_centro:
-        st.markdown(f'<p class="welcome-title">Dashboard | {st.session_state.empresa}</p>', unsafe_allow_html=True)
-        # Aquí van tus componentes, ej:
-        st.button("➕ NUEVA VENTA") 
-        
-else:
-    st.title(modulo_seleccionado):
-    st.title(modulo_seleccionado)
     
-        # ... (todo tu código del Dashboard original aquí)
-# =====================================================================
-# 5. PANEL CENTRAL
-# =====================================================================
-if modulo_seleccionado == "📊 Panel Principal / Dashboard":
-    col_centro, col_derecha = st.columns([3.2, 0.8])
     with col_centro:
         st.markdown(f'<p class="welcome-title">Dashboard | {st.session_state.empresa}</p>', unsafe_allow_html=True)
         st.markdown('<p class="welcome-subtitle">Aquí tienes el resumen operativo y financiero al momento.</p>', unsafe_allow_html=True)
         
-        # [Código de KPIs y Tarjetas permanece exactamente igual]
+        # Botones de Acción Rápida
         cb1, cb2, cb3 = st.columns(3)
         cb1.button("➕ NUEVA VENTA", use_container_width=True)
         cb2.button("📄 COTIZAR", use_container_width=True)
         cb3.button("📊 REPORTES", use_container_width=True)
         
         st.markdown("<br>", unsafe_allow_html=True)
+        
+        # Fila Principal de KPIs
         k_g, k_c, k_i = st.columns([1.6, 1.2, 1.2])
         with k_g:
             st.markdown(f'<div class="card-dark"><div class="card-title-dark">Utilidad Bruta (Mes)</div><div class="card-value-dark">$1,447.00</div><small style="color: #4ADE80;">📈 +12%</small></div>', unsafe_allow_html=True)
@@ -154,6 +138,7 @@ if modulo_seleccionado == "📊 Panel Principal / Dashboard":
         with k_i:
             st.markdown('<div class="card-white"><div class="card-title">Ingresos Hoy</div><div class="card-value">$0.00</div><small>Ayer: $0.00</small></div>', unsafe_allow_html=True)
 
+        # Segunda Fila de KPIs
         k1, k2, k3, k4 = st.columns(4)
         k1.markdown('<div class="card-white"><div class="card-title">Por Cobrar</div><div class="card-value">$0.00</div></div>', unsafe_allow_html=True)
         k2.markdown('<div class="card-white"><div class="card-title">Por Pagar</div><div class="card-value">$0.00</div></div>', unsafe_allow_html=True)
@@ -161,6 +146,15 @@ if modulo_seleccionado == "📊 Panel Principal / Dashboard":
         k4.markdown('<div class="card-white"><div class="card-title" style="color:#EF4444;">Stock Crítico</div><div class="card-value">0</div></div>', unsafe_allow_html=True)
     
     with col_derecha:
-        st.markdown('<div class="card-white" style="background-color: #EFF6FF; border: 1px solid #BFDBFE; height: 100%;"><div class="card-title" style="color: #1E40AF;">🛒 MÓDULO OPERATIVO</div><br><p style="font-size:12px; color: #1E3A8A;">Panel dinámico activo.</p></div>', unsafe_allow_html=True)
+        st.markdown("""
+            <div class="card-white" style="background-color: #EFF6FF; border: 1px solid #BFDBFE; height: 100%;">
+                <div class="card-title" style="color: #1E40AF;">🛒 MÓDULO OPERATIVO</div>
+                <br>
+                <p style="font-size: 14px; color: #1E3A8A;">Resumen rápido de las actividades del día.</p>
+            </div>
+            """, unsafe_allow_html=True)
+
+# Opción por defecto para los módulos que aún no se han programado
 else:
     st.title(modulo_seleccionado)
+    st.info("Módulo en desarrollo. Pronto estará disponible.")
