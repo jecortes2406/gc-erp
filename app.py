@@ -122,7 +122,7 @@ elif "Panel Principal / Dashboard" in modulo_seleccionado:
         # Asegúrate de que todo el código del dashboard esté a la misma altura (tabulación) que el st.markdown de arriba
         cb1, cb2, cb3 = st.columns(3)
         # ... resto de tus botones ...
-else:
+ else:
     st.title(modulo_seleccionado)
     
         # ... (todo tu código del Dashboard original aquí)
