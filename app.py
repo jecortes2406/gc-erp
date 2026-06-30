@@ -1,23 +1,21 @@
 import streamlit as st
 
-# Configuración de página: Layout Wide y tema claro
 st.set_page_config(layout="wide", page_title="ERP Maestro")
 
-# Estilo profesional: Fondo blanco, texto oscuro, legibilidad máxima
 st.markdown("""
     <style>
-    .stApp { background-color: #ffffff; color: #333333; }
-    [data-testid="stSidebar"] { background-color: #f0f2f6; }
-    h1, h2, h3 { color: #1e3a8a; }
-    .stMetric { background-color: #f9fafb; padding: 15px; border-radius: 10px; border: 1px solid #e5e7eb; }
+    /* Fondo Gris Medio Corporativo */
+    .stApp { background-color: #f1f3f4; }
+    /* Estilo de Tarjetas */
+    .css-1r6slb0, .stForm { 
+        background-color: white; 
+        border-radius: 12px; 
+        padding: 24px; 
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05); 
+        border: 1px solid #e0e0e0;
+    }
+    /* Tipografía y Contraste */
+    h1, h2, h3 { color: #202124; font-weight: 600; }
+    .stMetric { background-color: #ffffff; padding: 15px; border-radius: 8px; border: 1px solid #e0e0e0; }
     </style>
 """, unsafe_allow_html=True)
-
-# Lógica de navegación
-menu = st.sidebar.radio("Navegación", ["Panel Principal", "Gestión / Inventario"])
-
-if menu == "Gestión / Inventario":
-    from modulo_inventario import mostrar_formulario_inventario
-    mostrar_formulario_inventario()
-else:
-    st.title("Panel Gerencial")
