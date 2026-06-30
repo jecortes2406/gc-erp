@@ -57,7 +57,7 @@ def inicializar_base_datos_grafica():
     
     # Inyección de la información exacta visualizada en tu panel
     cursor.execute("SELECT COUNT(*) FROM productos_gc")
-    if cursor.fetchone() == 0:
+    if cursor.fetchone()[0] == 0:
         datos = [
             (1061, 'Producto de Puocelc Portal', 0.50, 25.91, 0.00, 15.00, 19.00, 'Alta', 183, 0),
             (1092, 'Producto de Frumenco Diesso (Hueso)', 10.00, 25.91, 50.00, 350.00, 330.00, 'Hueso', 38, 29),
@@ -106,9 +106,11 @@ if menu == "📊 Dashboard":
     
     with col_izq:
         st.write("**Rendimiento por Vendedor (Ventas Mensuales)**")
+        lista_productos_kpi = ['Bolsas Surtidas', 'Choco Surtido', 'Trululu Aros', 'Gomas Menta', 'Lokiño Barra', 'Caramelo Choc']
+        lista_ventas_kpi = [520000, 320000, 280000, 240000, 180000, 120000]
         data_vendedores = {
-            'Vendedor': ['Bolsas Surtidas', 'Choco Surtido', 'Trululu Aros', 'Gomas Menta', 'Lokiño Barra', 'Caramelo Choc'],
-            'Ventas (USD)': [530000, 310000, 220000, 210000, 100000, 85000]
+            'Vendedor': lista_productos_kpi,
+            'Ventas (USD)': lista_ventas_kpi
         }
         df_vend = pd.DataFrame(data_vendedores)
         st.bar_chart(data=df_vend, x='Vendedor', y='Ventas (USD)', color='#1b4f72')
@@ -131,8 +133,17 @@ if menu == "📊 Dashboard":
     
     with m1:
         st.markdown("<p style='color:#1b4f72; font-weight:bold;'>TOP 10 PRODUCTOS MÁS VENDIDOS</p>", unsafe_allow_html=True)
-        # Línea 136 corregida de manera continua para evitar el fallo en la nube
-        top_10 = pd.DataFrame({'Nombre del Producto': ['Nombre Producto 1', 'Nombre Producto 2', 'Nombre Comercial 1', 'Nombre Comercial 2'], 'Cantidad':, 'Regrenua (USD)': ['$17,995.90', '$15,326.75', '$920.60', '$390.90']})
+        # Separación estricta de variables para blindar la estructura contra errores
+        lista_nombres_top = ['Nombre Producto 1', 'Nombre Producto 2', 'Nombre Comercial 1', 'Nombre Comercial 2']
+        lista_cantidades_top = [183, 130, 30, 10]
+        lista_precios_top = ['$17,995.90', '$15,326.75', '$920.60', '$390.90']
+        
+        data_top_10 = {
+            'Nombre del Producto': lista_nombres_top,
+            'Cantidad': lista_cantidades_top,
+            'Regrenua (USD)': lista_precios_top
+        }
+        top_10 = pd.DataFrame(data_top_10)
         st.dataframe(top_10, use_container_width=True, hide_index=True)
 
     with m2:
