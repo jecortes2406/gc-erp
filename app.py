@@ -40,7 +40,7 @@ def inicializar_estructura_saint_erp():
     # 6. Transacciones: Libro Diario de Ventas, Egresos e Instrumentos de Pago
     cursor.execute('''CREATE TABLE IF NOT EXISTS ventas (
                         id INTEGER PRIMARY KEY AUTOINCREMENT, fecha TEXT, tipo_documento TEXT, estatus TEXT,
-                        cliente_id TEXT, vendedor TEXT, codigo_producto TEXT, cantidad REAL, precio_aplicado_ves REAL, subtotal_ves REAL, 
+                        cliente_id TEXT, seller TEXT, codigo_producto TEXT, cantidad REAL, precio_aplicado_ves REAL, subtotal_ves REAL, 
                         iva_ves REAL, igtf_ves REAL, total_ves REAL, equivalente_usd REAL, 
                         comision_ganada_usd REAL, instrumento_pago TEXT, estatus_fiscal TEXT)''')
     
