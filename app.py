@@ -1,21 +1,28 @@
 import streamlit as st
+from database_manager import init_db
 
-st.set_page_config(layout="wide", page_title="ERP Maestro")
+init_db()
+st.set_page_config(layout="wide", page_title="ERP Profesional")
 
+# CSS para el look gris corporativo (ni muy claro, ni muy oscuro)
 st.markdown("""
     <style>
-    /* Fondo Gris Medio Corporativo */
     .stApp { background-color: #f1f3f4; }
-    /* Estilo de Tarjetas */
-    .css-1r6slb0, .stForm { 
-        background-color: white; 
-        border-radius: 12px; 
-        padding: 24px; 
-        box-shadow: 0 2px 4px rgba(0,0,0,0.05); 
-        border: 1px solid #e0e0e0;
-    }
-    /* Tipografía y Contraste */
-    h1, h2, h3 { color: #202124; font-weight: 600; }
-    .stMetric { background-color: #ffffff; padding: 15px; border-radius: 8px; border: 1px solid #e0e0e0; }
+    .stMetric { background-color: white; padding: 15px; border-radius: 8px; border: 1px solid #ddd; }
     </style>
 """, unsafe_allow_html=True)
+
+# Tasas de Cambio en Barra Lateral
+st.sidebar.title("Configuración")
+st.sidebar.subheader("Tasas del día")
+bcv = st.sidebar.number_input("Tasa BCV", 36.50)
+euro = st.sidebar.number_input("Tasa Euro", 40.20)
+binance = st.sidebar.number_input("Tasa Binance", 37.10)
+
+menu = st.sidebar.radio("Navegación", ["Panel Principal", "Gestión / Inventario"])
+
+if menu == "Gestión / Inventario":
+    from modulo_inventario import mostrar_formulario_inventario
+    mostrar_formulario_inventario()
+else:
+    st.title("Panel Gerencial")
