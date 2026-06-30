@@ -57,7 +57,7 @@ def inicializar_base_datos_grafica():
     
     # Inyección de la información exacta visualizada en tu panel
     cursor.execute("SELECT COUNT(*) FROM productos_gc")
-    if cursor.fetchone()[0] == 0:
+    if cursor.fetchone() == 0:
         datos = [
             (1061, 'Producto de Puocelc Portal', 0.50, 25.91, 0.00, 15.00, 19.00, 'Alta', 183, 0),
             (1092, 'Producto de Frumenco Diesso (Hueso)', 10.00, 25.91, 50.00, 350.00, 330.00, 'Hueso', 38, 29),
@@ -87,7 +87,7 @@ with st.sidebar:
 if menu == "📊 Dashboard":
     st.markdown("## 📊 CONTROL GERENCIAL Y OPERATIVO")
     
-    # 🎛️ BLOQUE 1: Tasas de Configuración e Ingresos (Métricas ejecutivas en blanco)
+    # 🎛️ BLOQUE 1: Tasas de Configuración e Ingresos (Métricas ejecutivas)
     c1, c2, c3, c4 = st.columns(4)
     with c1:
         st.metric(label="Tasa BCV del Día", value="Bs. 12.33633")
@@ -108,7 +108,7 @@ if menu == "📊 Dashboard":
         st.write("**Rendimiento por Vendedor (Ventas Mensuales)**")
         data_vendedores = {
             'Vendedor': ['Bolsas Surtidas', 'Choco Surtido', 'Trululu Aros', 'Gomas Menta', 'Lokiño Barra', 'Caramelo Choc'],
-            'Ventas (USD)': [450, 320, 580, 210, 390, 490]
+            'Ventas (USD)': [550, 420, 310, 280, 190, 120]
         }
         df_vend = pd.DataFrame(data_vendedores)
         st.bar_chart(data=df_vend, x='Vendedor', y='Ventas (USD)', color='#1b4f72')
@@ -155,7 +155,7 @@ if menu == "📊 Dashboard":
         conn.close()
         
         for idx, row in df_hueso.iterrows():
-            col_txt, col_btn = st.columns([3, 1])
+            col_txt, col_btn = st.columns()
             with col_txt:
                 st.write(f"📦 **{row['nombre']}**\nStock: {row['stock']} | Días: {row['dias_stock']}")
             with col_btn:
