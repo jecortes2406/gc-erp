@@ -1,38 +1,53 @@
 import streamlit as st
-import pandas as pd
+import sqlite3
 
-# Configuración: El cliente nunca ve esta tasa, es tu "ancla" interna
-TASAS_INTERNAS = {"USDT": 1.0, "VES": 45.0} # Ajusta tu tasa real aquí
+# --- CONFIGURACIÓN E INICIALIZACIÓN ---
+st.set_page_config(page_title="GC ERP Pro", layout="wide")
+TASA_ANCLA_USDT = 45.0  # Ajustable desde aquí
 
-st.set_page_config(page_title="GC ERP - Sistema Interno", layout="wide")
+# Inicializar Base de Datos
+conn = sqlite3.connect('gc_erp.db')
+c = conn.cursor()
+c.execute('''CREATE TABLE IF NOT EXISTS inventario 
+             (id INTEGER PRIMARY KEY, nombre TEXT, precio_bulto REAL, precio_mayor REAL, precio_detal REAL, iva REAL)''')
+c.execute('''CREATE TABLE IF NOT EXISTS ventas 
+             (id INTEGER PRIMARY KEY, quiosco TEXT, monto_usdt REAL, comision_vendedor REAL)''')
+conn.commit()
 
-st.title("🛡️ GC ERP - Gestión Interna")
+# --- MÓDULOS DEL SISTEMA ---
+menu = st.sidebar.selectbox("Seleccione Módulo", ["Dashboard", "Inventario y Carga", "Ventas", "Comisiones"])
 
-# MÓDULO DE VENTAS (Solo lógica interna)
-st.subheader("Registrar Venta")
-col1, col2 = st.columns(2)
-
-with col1:
-    quiosco = st.selectbox("Seleccionar Quiosco/Almacén", ["Quiosco 1", "Quiosco 2", "Almacén Central"])
-with col2:
-    monto_local = st.number_input("Monto total a cobrar al cliente (Moneda Local)", min_value=0.0)
-
-# CÁLCULO DE EQUILIBRIO (Oculto al cliente)
-if st.button("Procesar Venta Protegida"):
-    # Convertimos a USDT internamente para el resguardo del valor
-    monto_usdt = monto_local / TASAS_INTERNAS["VES"]
+if menu == "Inventario y Carga":
+    st.header("📦 Carga de Productos e Inventario")
+    nombre = st.text_input("Nombre del Producto")
+    bulto = st.number_input("Precio por Bulto (USDT)")
+    mayor = st.number_input("Precio al Mayor (USDT)")
+    detal = st.number_input("Precio al Detal (USDT)")
+    iva_porc = st.slider("IVA (%)", 0, 16, 16)
     
-    st.info(f"Venta registrada en {quiosco}")
-    st.write("---")
-    st.caption("Resumen interno para Gerencia:")
-    st.write(f"**Valor de resguardo (USDT):** {monto_usdt:.2f} USDT")
-    st.success("Transacción exitosa. El cliente solo visualizó el monto en moneda local.")
+    if st.button("Guardar Producto"):
+        c.execute("INSERT INTO inventario (nombre, precio_bulto, precio_mayor, precio_detal, iva) VALUES (?,?,?,?,?)", 
+                  (nombre, bulto, mayor, detal, iva_porc))
+        conn.commit()
+        st.success(f"Producto {nombre} cargado con éxito.")
 
-# MÓDULO DE INVENTARIO (Estructura de 3 precios)
-st.sidebar.subheader("Inventario")
-precio_bulto = st.sidebar.number_input("Precio Bulto (USDT)", help="Referencia interna")
-precio_mayor = st.sidebar.number_input("Precio Mayor (USDT)")
-precio_detal = st.sidebar.number_input("Precio Detal (USDT)")
+elif menu == "Ventas":
+    st.header("🛒 Módulo de Ventas")
+    # Lógica de venta
+    precio_final = st.number_input("Precio de Venta (USDT)", min_value=0.0)
+    iva = st.number_input("IVA Aplicado (%)", 16)
+    vendedor_pct = st.number_input("Comisión Vendedor (%)", 5)
+    
+    if st.button("Registrar Venta"):
+        monto_con_iva = precio_final * (1 + (iva/100))
+        comision = precio_final * (vendedor_pct/100)
+        c.execute("INSERT INTO ventas (monto_usdt, comision_vendedor) VALUES (?,?)", (monto_con_iva, comision))
+        conn.commit()
+        st.write(f"Total Cliente (con IVA): {monto_con_iva * TASA_ANCLA_USDT} VES")
+        st.info(f"Comisión calculada para vendedor: {comision:.2f} USDT")
 
-st.sidebar.write("---")
-st.sidebar.info("Modo de protección: Activo (USDT Anclado)")
+elif menu == "Comisiones":
+    st.header("💰 Liquidación de Comisiones")
+    df = pd.read_sql("SELECT * FROM ventas", conn)
+    st.dataframe(df)
+    st.metric("Total a pagar en comisiones", f"{df['comision_vendedor'].sum():.2f} USDT")
