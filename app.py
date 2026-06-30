@@ -112,7 +112,7 @@ if menu == "📊 Dashboard":
     st.write("---")
     
     # Variables de listas seguras para los gráficos del dashboard
-    cantidades_vendedores = [183, 130, 30, 10, 20, 15]
+    cantidades_vendedores = [1200.0, 850.5, 1500.0, 950.0, 600.0, 1100.0]
     cantidades_top = [183, 130, 30]
     valores_pie = [35.5, 42.1, 22.4]
 
@@ -161,7 +161,7 @@ if menu == "📊 Dashboard":
         conn.close()
         
         for idx, row in df_hueso.iterrows():
-            col_t, col_b = st.columns()
+            col_t, col_b = st.columns(2)
             with col_t:
                 st.write(f"📦 **{row['nombre']}**  \nStock: {row['stock']} | Días: {row['dias_stock']}")
             with col_b:
