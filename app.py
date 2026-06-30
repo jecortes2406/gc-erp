@@ -2,7 +2,7 @@ import streamlit as st
 import sqlite3
 import pandas as pd
 from datetime import datetime
-import requests
+import urllib.parse
 
 # Configuración del Sistema Gerencial de Alta Visibilidad
 st.set_page_config(page_title="Grupo Comercial - ERP Operativo V1.0", layout="wide", page_icon="🏢")
@@ -25,37 +25,25 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# =====================================================================
-# INTERFAZ DE CONEXIÓN AUTOMÁTICA A FEED DE TASAS EN TIEMPO REAL
-# =====================================================================
-@st.cache_data(ttl=3600)  # Actualiza la caché automáticamente cada hora
-def obtener_feed_tasas_venezuela():
-    """Conecta con una API de contingencia y simula la fluctuación cambiaria regulada en Venezuela."""
-    try:
-        # Reemplazar con endpoint oficial en producción (Ej. api.bcv.org.ve o monitordolar)
-        return {"bcv": 45.50633, "euro": 49.33210, "usdt": 47.85350}
-    except Exception:
-        # Valores de respaldo estables según imagen de referencia
-        return {"bcv": 12.33633, "euro": 13.33000, "usdt": 12.85000}
-
-tasas = obtener_feed_tasas_venezuela()
+# Feed Cambiario Referencial
+tasas = {"bcv": 45.50633, "euro": 49.33210, "usdt": 47.85350}
 
 # =====================================================================
-# MOTOR DE INICIALIZACIÓN DE BASE DE DATOS OPERATIVA RELACIONAL
+# MOTOR DE INICIALIZACIÓN DE BASE DE DATOS (CORREGIDO)
 # =====================================================================
 def inicializar_estructura_erp():
     conn = sqlite3.connect('gc_ecosistema_data.db')
     cursor = conn.cursor()
     
-    # 1. Maestro de Inventario Completo con lotes y días parado
+    # 1. Maestro de Inventario
     cursor.execute('''CREATE TABLE IF NOT EXISTS inventario (
                         id INTEGER PRIMARY KEY, nombre TEXT, costo_usd REAL, porc_ganancia REAL,
                         precio_detal_ves REAL, precio_bulto_ves REAL, precio_mayor_ves REAL,
                         lote_zeta TEXT, stock INTEGER, dias_stock INTEGER)''')
     
-    # 2. Registro Operativo de Ventas / Facturación
+    # 2. Registro de Ventas - CORREGIDO: INTEGER PRIMARY KEY AUTOINCREMENT
     cursor.execute('''CREATE TABLE IF NOT EXISTS ventas (
-                        id INTEGER PRIMARY KEY AUTO_INCREMENT, fecha TEXT, cliente_id TEXT,
+                        id INTEGER PRIMARY KEY AUTOINCREMENT, fecha TEXT, cliente_id TEXT,
                         codigo_producto INTEGER, cantidad INTEGER, monto_usd REAL, forma_pago TEXT, moneda TEXT)''')
     
     # 3. Directorio de Clientes
@@ -66,9 +54,9 @@ def inicializar_estructura_erp():
     cursor.execute('''CREATE TABLE IF NOT EXISTS proveedores (
                         rif TEXT PRIMARY KEY, empresa TEXT, telefono TEXT, contacto TEXT)''')
     
-    # 5. Libro de Egresos y Gastos Multimoneda (Cono Monetario)
+    # 5. Libro de Egresos - CORREGIDO: INTEGER PRIMARY KEY AUTOINCREMENT
     cursor.execute('''CREATE TABLE IF NOT EXISTS gastos (
-                        id INTEGER PRIMARY KEY AUTO_INCREMENT, fecha TEXT, descripcion TEXT,
+                        id INTEGER PRIMARY KEY AUTOINCREMENT, fecha TEXT, descripcion TEXT,
                         monto_original REAL, moneda TEXT, tasa_cambio REAL, equivalente_usd REAL, proveedor_rif TEXT)''')
     
     # Inyectar muestras iniciales si las tablas están vacías
@@ -100,59 +88,43 @@ with st.sidebar:
 if menu == "📊 Dashboard":
     st.markdown("## 📊 CONTROL GERENCIAL Y OPERATIVO")
     
-    # Bloque de Tasas de Cambio Automáticas (Feed en Vivo)
     c1, c2, c3, c4 = st.columns(4)
-    with c1:
-        st.metric(label="Tasa Oficial BCV del Día", value=f"Bs. {tasas['bcv']:.5f}")
-    with c2:
-        st.metric(label="Tasa Euro BCV (VES/EUR)", value=f"Bs. {tasas['euro']:.5f}")
-    with c3:
-        st.metric(label="Tasa Binance P2P (Ref. USDT)", value=f"Bs. {tasas['usdt']:.5f}")
+    with c1: st.metric(label="Tasa Oficial BCV del Día", value=f"Bs. {tasas['bcv']:.5f}")
+    with c2: st.metric(label="Tasa Euro BCV (VES/EUR)", value=f"Bs. {tasas['euro']:.5f}")
+    with c3: st.metric(label="Tasa Binance P2P (Ref. USDT)", value=f"Bs. {tasas['usdt']:.5f}")
     with c4:
-        # Cálculo en caliente del acumulado real de ventas
         conn = sqlite3.connect('gc_ecosistema_data.db')
         total_hoy = pd.read_sql_query("SELECT SUM(monto_usd) as total FROM ventas", conn)['total'].iloc[0] or 0.0
         conn.close()
         st.metric(label="Ventas Totales Hoy (USD)", value=f"${total_hoy + 1653.27:,.2f}")
 
     st.write("---")
-    
-    # Matrices Analíticas de Productos
     st.markdown("### 🗂️ DIAGNÓSTICO DE ROTACIÓN Y MARGEN COMERCIAL")
     m1, m2, m3 = st.columns(3)
     
     with m1:
         st.markdown("<p style='color:#1b4f72; font-weight:bold; margin-bottom:5px;'>TOP PRODUCTOS MÁS VENDIDOS</p>", unsafe_allow_html=True)
-        st.dataframe(pd.DataFrame({
-            'Producto': ['Nombre Producto 1', 'Nombre Producto 2', 'Producto de Puocelc'],
-            'Cantidad': [183, 130, 30],
-            'Volumen USD': ['$17,995.90', '$15,326.75', '$920.60']
-        }), use_container_width=True, hide_index=True)
-
+        st.dataframe(pd.DataFrame({'Producto': ['Nombre Producto 1', 'Nombre Producto 2', 'Producto de Puocelc'], 'Cantidad':, 'Volumen USD': ['$17,995.90', '$15,326.75', '$920.60']}), use_container_width=True, hide_index=True)
     with m2:
         st.markdown("<p style='color:#1b4f72; font-weight:bold; margin-bottom:5px;'>TOP PRODUCTOS MAYOR MARGEN</p>", unsafe_allow_html=True)
-        st.dataframe(pd.DataFrame({
-            'Producto': ['Producto de Puocelc', 'Frumenco Diesso'],
-            '% Margen': ['25.91%', '25.91%'],
-            'Valor Margen': ['$361.33', '$332.39']
-        }), use_container_width=True, hide_index=True)
-
+        st.dataframe(pd.DataFrame({'Producto': ['Producto de Puocelc', 'Frumenco Diesso'], '% Margen': ['25.91%', '25.91%'], 'Valor Margen': ['$361.33', '$332.39']}), use_container_width=True, hide_index=True)
     with m3:
         st.markdown("<p style='color:#e67e22; font-weight:bold; margin-bottom:5px;'>⚠️ ALERTAS BAJA ROTACIÓN (HUESO)</p>", unsafe_allow_html=True)
         conn = sqlite3.connect('gc_ecosistema_data.db')
-        df_hueso = pd.read_sql_query("SELECT id, nombre, stock, dias_stock FROM inventario WHERE dias_stock >= 15", conn)
+        df_hueso = pd.read_sql_query("SELECT id, nombre, stock, dias_stock, (SELECT telefono FROM clientes LIMIT 1) as tlf FROM inventario WHERE dias_stock >= 15", conn)
         conn.close()
         
         for idx, row in df_hueso.iterrows():
             col_t, col_b = st.columns([2, 1])
             with col_t:
-                st.write(f"📦 **{row['nombre']}**  \nStock: {row['stock']} bultos | Días: {row['dias_stock']}")
+                st.write(f"📦 **{row['nombre']}**\nStock: {row['stock']} | Días: {row['dias_stock']}")
             with col_b:
-                if st.button("PROMO", key=f"promo_{row['id']}"):
-                    st.success(f"¡Promoción activada para SKU {row['id']}!")
+                msg = f"🎉 *OFERTA FLASH* 🎉\nLiquidación de *{row['nombre']}* a un precio inigualable. ¡Escríbenos ya!"
+                link = f"https://whatsapp.com{row['tlf']}&text={urllib.parse.quote(msg)}"
+                st.markdown(f"[[PROMO]]({link})")
 
 # =====================================================================
-# PESTAÑA 2: CARGA DE INVENTARIO CON TODAS LAS CARACTERÍSTICAS
+# PESTAÑA 2: CARGA DE INVENTARIO (EDITABLE Y PERSISTENTE)
 # =====================================================================
 elif menu == "📦 Inventario (Carga)":
     st.markdown("## 📦 ACCIONES DE CARGA Y CONTROL DE INVENTARIO")
@@ -161,14 +133,33 @@ elif menu == "📦 Inventario (Carga)":
         cc1, cc2, cc3 = st.columns(3)
         with cc1:
             id_sku = st.number_input("ID Código SKU", min_value=1000, max_value=9999, value=1100)
-            nombre = st.text_input("Descripción del Producto / Marca", placeholder="Ej: TRULULU AROS 36BX50U")
+            nombre = st.text_input("Descripción del Producto / Marca")
             costo_usd = st.number_input("Costo de Adquisición (USD)", min_value=0.0, format="%.2f")
         with cc2:
             ganancia = st.number_input("% Margen de Utilidad", min_value=0.0, max_value=100.0, value=25.0)
-            lote = st.text_input("Código de Lote (Zeta)", placeholder="Ej: Z-2026-A")
+            lote = st.text_input("Código de Lote (Zeta)")
             stock = st.number_input("Cantidad de Bultos / Cajas", min_value=1, value=50)
         with cc3:
-            # Cálculo automático en caliente de los 3 niveles de precios en Bolívares usando la tasa oficial
             precio_base_usd = costo_usd * (1 + (ganancia / 100))
-            p_detal_ves = st.number_input("Precio Detal Sugerido (VES)", value=precio_base_usd * tasas['bcv'], format="%.2f")
-            p_bulto_ves = st.number_input("Precio por Bulto Sugerido (VES)", value=precio_base_usd * 0.90 * tasas['bcv'], format="%.2f")
+            p_detal_ves = st.number_input("Precio Detal (VES)", value=precio_base_usd * tasas['bcv'], format="%.2f")
+            p_bulto_ves = st.number_input("Precio por Bulto (VES)", value=precio_base_usd * 0.90 * tasas['bcv'], format="%.2f")
+            p_mayor_ves = st.number_input("Precio al Mayor (VES)", value=precio_base_usd * 0.85 * tasas['bcv'], format="%.2f")
+            
+        if st.form_submit_button("REGISTRAR SKU EN MAESTRO"):
+            conn = sqlite3.connect('gc_ecosistema_data.db')
+            cursor = conn.cursor()
+            cursor.execute("INSERT OR REPLACE INTO inventario VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0)",
+                           (id_sku, nombre, costo_usd, ganancia, p_detal_ves, p_bulto_ves, p_mayor_ves, lote, stock))
+            conn.commit()
+            conn.close()
+            st.success("✅ SKU registrado con éxito.")
+
+    st.write("---")
+    st.markdown("### 📋 MAESTRO CENTRAL DE INVENTARIO DISPONIBLE")
+    conn = sqlite3.connect('gc_ecosistema_data.db')
+    df_inv = pd.read_sql_query("SELECT * FROM inventario", conn)
+    conn.close()
+    
+    # Editor de datos en caliente con persistencia real
+    df_editado = st.data_editor(df_inv, use_container_width=True, hide_index=True, key="inv_editor")
+    if st.button("💾 GUARDAR CAMBIOS CAMBIADOS EN TABLA"):
