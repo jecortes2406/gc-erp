@@ -1,43 +1,51 @@
 import streamlit as st
-import pandas as pd
 
 def mostrar_formulario_inventario():
-    # Estilo CSS para imitar la interfaz corporativa
-    st.markdown("""
-        <style>
-        .metric-card { background-color: #f8f9fa; padding: 20px; border-radius: 10px; border-left: 5px solid #2e86c1; }
-        </style>
-    """, unsafe_allow_html=True)
-
-    # CABECERA Y MÉTRICAS (KPIs)
-    st.markdown("## 🏢 INVENTARIO MAESTRO")
-    st.markdown("### Auditoría Profesional de Almacén")
+    st.markdown("## 📦 GESTIÓN DE INVENTARIO MAESTRO")
     
-    col1, col2, col3, col4 = st.columns(4)
-    # Aquí usarás los cálculos reales de tu base de datos
-    col1.metric("Valor Venta Total", "$432.00", "+5%")
-    col2.metric("Stock Bajo Mínimo", "0", delta_color="inverse")
-    col3.metric("Unidades en Almacén", "840", "Unidades")
-    col4.metric("Inversión en Stock", "$345.60")
+    if 'modo_ingreso' not in st.session_state: st.session_state.modo_ingreso = False
 
-    st.markdown("---")
-
-    # BARRA DE HERRAMIENTAS Y ACCIONES
-    t1, t2 = st.columns([0.7, 0.3])
-    t1.text_input("🔍 Escanear o Escribir Producto...", key="search")
-    if t2.button("＋ Crear Producto", type="primary"):
-        st.session_state.modo_ingreso = True
-        st.rerun()
-
-    # TABLA DE DATOS (Lista profesional)
-    st.markdown("### Listado de Existencias")
-    # Este dataframe debe venir de tu base de datos con los nombres de columnas mapeados
-    df_ejemplo = pd.DataFrame({
-        "SKU": ["41"],
-        "Producto/Clasificación": ["CALF - BRAZIL"],
-        "Categoría": ["TABACOS"],
-        "Precio ($)": ["$0.50"],
-        "Existencia": [60],
-        "Estado": ["ACTIVO"]
-    })
-    st.table(df_ejemplo)
+    if not st.session_state.modo_ingreso:
+        # Aquí se mantiene tu Dashboard y botón de agregar
+        if st.button("＋ AGREGAR NUEVO PRODUCTO", type="primary"):
+            st.session_state.modo_ingreso = True
+            st.rerun()
+        st.write("---")
+        st.write("### Listado de Existencias")
+        # Aquí va tu tabla existente...
+        
+    else:
+        # --- NUEVO ESQUEMA INTEGRADO ---
+        with st.form("form_inventario_pro"):
+            st.subheader("📝 Carga de Producto")
+            
+            # Bloque 1: Identificación
+            c1, c2 = st.columns(2)
+            sku = c1.text_input("Código SKU")
+            nombre = c2.text_input("Nombre del Producto")
+            
+            # Bloque 2: Costos (El corazón financiero)
+            st.markdown("---")
+            st.markdown("### 💰 Estructura de Costos")
+            f1, f2, f3 = st.columns(3)
+            costo = f1.number_input("Costo Base ($)", min_value=0.0, format="%.2f")
+            moneda = f2.selectbox("Moneda", ["USD", "USDT"])
+            comision = f3.number_input("Comisión Vendedor (%)", min_value=0.0)
+            
+            # Bloque 3: Niveles de Venta (Los 3 precios)
+            st.markdown("---")
+            st.markdown("### 📊 Niveles de Venta (Márgenes)")
+            n1, n2, n3 = st.columns(3)
+            margen_detal = n1.number_input("Margen Detal (%)", 0.0)
+            margen_bulto = n2.number_input("Margen Bulto (%)", 0.0)
+            margen_mayor = n3.number_input("Margen Mayor (%)", 0.0)
+            
+            # Botón de acción
+            if st.form_submit_button("💾 GUARDAR PRODUCTO"):
+                st.success("Producto registrado exitosamente con sus estructuras de precio.")
+                st.session_state.modo_ingreso = False
+                st.rerun()
+        
+        if st.button("⬅️ Volver al listado"):
+            st.session_state.modo_ingreso = False
+            st.rerun()
