@@ -104,7 +104,7 @@ modulos = [
 modulo_seleccionado = st.sidebar.radio("MENÚ DE OPERACIONES:", modulos)
 
 # --- CONEXIÓN DEL MÓDULO ---
-if "Gestión / Inventario" in modulo_seleccionado:
+if "Gestión / Inventario" == modulo_seleccionado:
     mostrar_formulario_inventario()
 # =====================================================================
 # 5. PANEL CENTRAL
