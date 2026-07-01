@@ -3,6 +3,19 @@ import pandas as pd
 import urllib.request
 import json
 from modulo_inventario import render_modulo_inventario
+# Importa tu archivo de utilidades
+import utils 
+
+# Lógica del estado de las tasas (Solo si no existen)
+if 'tasa_binance' not in st.session_state:
+    st.session_state.tasa_binance, st.session_state.tasa_bcv = utils.obtener_tasas()
+
+# Barra lateral de control (Esto hace que aparezca el control de tasas)
+st.sidebar.markdown("---")
+st.sidebar.subheader("⚙️ Control de Tasas")
+st.session_state.tasa_binance = st.sidebar.number_input("Tasa Binance (P2P)", value=st.session_state.tasa_binance, format="%.2f")
+st.session_state.tasa_bcv = st.sidebar.number_input("Tasa BCV", value=st.session_state.tasa_bcv, format="%.2f")
+st.session_state.referencia_master = st.session_state.tasa_binance
 
 # =====================================================================
 # 1. CONFIGURACIÓN Y ESTILOS (Mantenemos tu diseño)
