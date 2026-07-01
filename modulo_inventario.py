@@ -2,7 +2,6 @@ import streamlit as st
 import pandas as pd
 from datetime import datetime
 # Importamos las funciones de tu base de datos sin tocar nada anterior
-from database_manager import insertar_producto, obtener_todos_productos
 
 def render_modulo_inventario():
     # Inicializamos la estructura de datos si no existe
