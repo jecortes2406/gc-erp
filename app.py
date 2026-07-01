@@ -1,4 +1,4 @@
-[8:14 p. m., 30/6/2026] ...: import streamlit as st
+import streamlit as st
 
 def run():
     st.markdown("## 🏢 GESTIÓN DE INVENTARIO")
