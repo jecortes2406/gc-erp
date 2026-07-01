@@ -36,36 +36,42 @@ st.set_page_config(
 )
 
 # =====================================================================
-# 2. SISTEMA DE ESTILOS CSS INYECTADOS
+# 2. SISTEMA DE ESTILOS: AZUL REY Y BRONCE/COBRE
 # =====================================================================
 st.markdown("""
     <style>
-    .stApp { background-color: #F8FAFC; }
+    /* Fondo Azul Rey Oscuro */
+    .stApp { background-color: #002366; } 
     
-    /* Contenedores de Tarjetas */
+    /* Contenedores de Tarjetas (Fondo azul un poco más claro para contraste) */
     .card-white {
-        background-color: #FFFFFF;
+        background-color: #003399;
         padding: 20px;
         border-radius: 14px;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        box-shadow: 0 4px 6px rgba(0,0,0,0.3);
         margin-bottom: 15px;
-        border: 1px solid #E2E8F0;
+        border: 1px solid #B87333; /* Borde Bronce */
     }
+    
     .card-dark {
-        background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%);
-        color: #FFFFFF;
+        background: linear-gradient(135deg, #001a4d 0%, #002366 100%);
+        color: #CD7F32; /* Bronce */
         padding: 25px;
         border-radius: 14px;
         margin-bottom: 15px;
+        border: 1px solid #B87333;
     }
     
-    /* Fuentes */
-    .card-title { font-size: 13px; font-weight: 700; color: #64748B; text-transform: uppercase; }
-    .card-title-dark { font-size: 13px; font-weight: 700; color: #38BDF8; text-transform: uppercase; }
-    .card-value { font-size: 28px; font-weight: 700; color: #1E293B; }
+    /* Fuentes en tonos Bronce/Cobre */
+    .card-title { font-size: 13px; font-weight: 700; color: #CD7F32; text-transform: uppercase; }
+    .card-title-dark { font-size: 13px; font-weight: 700; color: #E5A86D; text-transform: uppercase; }
+    .card-value { font-size: 28px; font-weight: 700; color: #FFFFFF; }
     .card-value-dark { font-size: 36px; font-weight: 700; color: #FFFFFF; }
-    .welcome-title { font-size: 28px; font-weight: 700; color: #0F172A; }
-    .welcome-subtitle { font-size: 14px; color: #64748B; margin-bottom: 20px; }
+    .welcome-title { font-size: 28px; font-weight: 700; color: #CD7F32; }
+    .welcome-subtitle { font-size: 14px; color: #FFFFFF; margin-bottom: 20px; }
+    
+    /* Ajuste para texto de Streamlit que no sea clase */
+    h1, h2, h3, p, div { color: #FFFFFF; }
     </style>
     """, unsafe_allow_html=True)
 
