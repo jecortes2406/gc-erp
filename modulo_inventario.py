@@ -5,6 +5,12 @@ from datetime import datetime
 from database_manager import insertar_producto, obtener_todos_productos
 
 def render_modulo_inventario():
+    # Inicializamos la estructura de datos si no existe
+    if 'inventario' not in st.session_state:
+        st.session_state.inventario = pd.DataFrame(columns=[
+            'Fecha', 'Código', 'Producto', 'Categoría', 'Unidad', 
+            'Costo USD', 'Margen %', 'Precio Venta Bs', 'Stock', 'Comision_Pct'
+        ])
     # Recuperamos la Tasa Maestra que definiste en tu app.py
     tasa_master = st.session_state.get('referencia_master', 46.50)
     
