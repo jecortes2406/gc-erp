@@ -1,19 +1,45 @@
 import streamlit as st
+import pandas as pd
 
 def render_dashboard():
-    st.markdown("# 📊 PANEL DE CONTROL")
+    st.markdown("# 📊 PANEL DE CONTROL EJECUTIVO")
     
-    # Selector de tipo de vista
-    vista = st.selectbox("Seleccionar vista de análisis", 
-                         ["Resumen Ejecutivo", "Análisis de Ventas", "Salud Financiera", "Inventario"])
+    # Verificación de datos
+    if 'db_inventario' not in st.session_state or st.session_state.db_inventario.empty:
+        st.warning("No hay datos en la matriz para calcular los KPIs. Registra productos primero.")
+        return
+
+    df = st.session_state.db_inventario
     
-    if vista == "Resumen Ejecutivo":
-        c1, c2, c3 = st.columns(3)
-        c1.metric("Venta Total (Mes)", "$ 12,450", "+12%")
-        c2.metric("Margen Real", "32%", "-1%")
-        c3.metric("Capital en Stock", "$ 45,000", "Estable")
+    # 1. KPIs DE SALUD FINANCIERA (Inversión vs Proyección)
+    total_inversion = df['Costo USD'].sum()
+    # Asumimos que precio sugerido es el de venta
+    total_venta_estimada = df['Precio Venta (Bs)'].sum() 
+    
+    c1, c2, c3 = st.columns(3)
+    c1.metric("Inversión Total (USD)", f"$ {total_inversion:,.2f}")
+    c2.metric("Valor Total Venta (Bs)", f"Bs. {total_venta_estimada:,.2f}")
+    c3.metric("Margen Promedio", f"{df['Margen %'].mean():.1f} %")
+
+    st.markdown("---")
+
+    # 2. PORTAFOLIO POR CATEGORÍA
+    col_a, col_b = st.columns(2)
+    with col_a:
+        st.subheader("📦 Portafolio por Categoría")
+        cat_data = df.groupby('Categoría')['Producto'].count()
+        st.bar_chart(cat_data)
         
-    elif vista == "Salud Financiera":
-        st.subheader("Estructura de Costos y Protección")
-        # Aquí irán los gráficos de barras de tus gastos vs ganancias
-        st.line_chart([100, 120, 115, 140]) # Ejemplo de tendencia
+    with col_b:
+        st.subheader("💰 Distribución de Márgenes")
+        st.line_chart(df[['Producto', 'Margen %']].set_index('Producto'))
+
+    # 3. ALERTA DE PUNTO DE EQUILIBRIO
+    st.markdown("---")
+    st.subheader("📈 Proyección de Industria")
+    
+    # Lógica simple: Si el margen promedio es menor a un umbral, alerta
+    if df['Margen %'].mean() < 20:
+        st.error("⚠️ Alerta: El margen promedio es bajo (< 20%). Ajuste de precios sugerido.")
+    else:
+        st.success("✅ Salud financiera: Margen promedio operativo óptimo.")
