@@ -208,10 +208,13 @@ if modulo_seleccionado == "📊 Panel Principal / Dashboard":
         st.markdown('<div class="card-white" style="background-color: #EFF6FF; border: 1px solid #BFDBFE; height: 100%;"><div class="card-title" style="color: #1E40AF;">🛒 MÓDULO OPERATIVO</div><br><p style="font-size:12px; color: #1E3A8A;">Este panel se activará dinámicamente al facturar o cotizar artículos en las fases superiores.</p></div>', unsafe_allow_html=True)
 
 else:
-    # ... después de tu import de modulo_inventario ...
-if modulo_seleccionado == "🧾 Crear Factura (POS)":
-    import modulo_pos
-    modulo_pos.render_modulo_pos()
-elif modulo_seleccionado == "🗂️ Gestión / Inventario":
-    import modulo_inventario
-    modulo_inventario.render_modulo_inventario()
+        # El bloque de abajo debe tener el margen a la derecha (4 espacios)
+        if modulo_seleccionado == "🧾 Crear Factura (POS)":
+            import modulo_pos
+            modulo_pos.render_modulo_pos()
+        elif modulo_seleccionado == "🗂️ Gestión / Inventario":
+            import modulo_inventario
+            modulo_inventario.render_modulo_inventario()
+        else:
+            st.title(modulo_seleccionado)
+            st.info("Módulo en desarrollo.")
