@@ -31,10 +31,25 @@ modulos = ["📊 Dashboard", "🗂️ Gestión / Inventario", "🧾 POS", "🛒 
 modulo_seleccionado = st.sidebar.radio("MENÚ DE OPERACIONES:", modulos)
 
 # 4. DISTRIBUCIÓN
+# 4. DISTRIBUCIÓN - Asegúrate de tener estas funciones importadas
 if modulo_seleccionado == "📊 Dashboard":
-    st.title("Panel de Control Ejecutivo")
-    # Aquí irá el dashboard que construiremos mañana
+    from dashboard import render_dashboard
+    render_dashboard()
+    
 elif modulo_seleccionado == "🗂️ Gestión / Inventario":
+    from modulo_inventario import render_modulo_inventario
     render_modulo_inventario()
-else:
-    st.title(modulo_seleccionado)
+    
+elif modulo_seleccionado == "🧾 POS":
+    from modulo_pos import render_modulo_pos
+    render_modulo_pos()
+
+elif modulo_seleccionado == "🛒 Compras":
+    st.subheader("🛒 Módulo de Compras y Gastos")
+    st.write("Aquí registraremos: Proveedores, Gastos Operativos y Entradas de Stock.")
+    # Próximamente: render_modulo_compras()
+
+elif modulo_seleccionado == "📈 Reportes":
+    st.subheader("📈 Reportes Generales")
+    st.write("Aquí generaremos el balance financiero y cierres de caja.")
+    # Próximamente: render_reportes()
