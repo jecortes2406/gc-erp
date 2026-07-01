@@ -1,6 +1,8 @@
 import streamlit as st
 import pandas as pd
 from datetime import datetime
+# Importamos las funciones de tu base de datos sin tocar nada anterior
+from database_manager import insertar_producto, obtener_todos_productos
 
 def render_modulo_inventario():
     # Recuperamos la Tasa Maestra que definiste en tu app.py
@@ -8,15 +10,10 @@ def render_modulo_inventario():
     
     st.markdown("## 📦 GESTIÓN DE INVENTARIO")
     
-    if 'inventario' not in st.session_state:
-        st.session_state.inventario = pd.DataFrame(columns=[
-            'Fecha', 'Código', 'Producto', 'Categoría', 'Unidad', 
-            'Costo USD', 'Margen %', 'Precio Venta Bs', 'Stock'
-        ])
-
     # Formulario
     st.markdown('<div class="card-white">', unsafe_allow_html=True)
     st.subheader("📝 REGISTRO DETALLADO")
+    
     with st.form("form_inventario_completo", clear_on_submit=True):
         c1, c2, c3 = st.columns(3)
         sku = c1.text_input("Código SKU")
@@ -30,17 +27,24 @@ def render_modulo_inventario():
         unidad = c7.selectbox("Unidad", ["Uni", "Caja", "Kilo", "Bulto"])
         
         if st.form_submit_button("🚀 GUARDAR PRODUCTO", type="primary"):
+            # Lógica de cálculo que ya tenías
             precio_bs = (costo_usd * (1 + (margen/100))) * tasa_master
-            nuevo = pd.DataFrame([{
-                'Fecha': datetime.now().strftime("%Y-%m-%d"), 'Código': sku, 
-                'Producto': nombre, 'Categoría': categoria, 'Unidad': unidad, 
-                'Costo USD': costo_usd, 'Margen %': margen, 
-                'Precio Venta Bs': precio_bs, 'Stock': stock
-            }])
-            st.session_state.inventario = pd.concat([st.session_state.inventario, nuevo], ignore_index=True)
-            st.success("Guardado.")
+            
+            # ANEXO: Guardar en la base de datos real (no solo en memoria)
+            # Adaptamos tus campos a la tabla que creamos
+            insertar_producto(nombre, sku, costo_usd, precio_bs/tasa_master, precio_bs, stock)
+            
+            st.success(f"Producto {nombre} guardado en base de datos.")
+            
     st.markdown('</div>', unsafe_allow_html=True)
 
-    # Matriz
-    st.subheader("📋 MATRIZ DE INVENTARIO")
-    st.data_editor(st.session_state.inventario, use_container_width=True)
+    # MATRIZ DINÁMICA (ANEXO)
+    st.subheader("📋 MATRIZ DE INVENTARIO (BD)")
+    
+    # Recuperamos los datos de la base de datos en lugar de solo el session_state
+    data = obtener_todos_productos()
+    if data:
+        df = pd.DataFrame(data, columns=["ID", "Nombre", "SKU", "Costo", "Precio_Base", "Precio_Venta_Bs", "Stock"])
+        st.dataframe(df, use_container_width=True)
+    else:
+        st.info("Aún no hay productos registrados en la base de datos.")
