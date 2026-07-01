@@ -1,5 +1,5 @@
 import streamlit as st
-
+from modulo_inventario import render_modulo_inventario
 def run():
     st.markdown("## 🏢 GESTIÓN DE INVENTARIO")
     
@@ -208,5 +208,8 @@ if modulo_seleccionado == "📊 Panel Principal / Dashboard":
         st.markdown('<div class="card-white" style="background-color: #EFF6FF; border: 1px solid #BFDBFE; height: 100%;"><div class="card-title" style="color: #1E40AF;">🛒 MÓDULO OPERATIVO</div><br><p style="font-size:12px; color: #1E3A8A;">Este panel se activará dinámicamente al facturar o cotizar artículos en las fases superiores.</p></div>', unsafe_allow_html=True)
 
 else:
-    st.title(modulo_seleccionado)
-    st.info("Estructura de la Capa 1 lista para recibir la automatización de este módulo.")
+    if modulo_seleccionado == "🗂️ Gestión / Inventario":
+        render_modulo_inventario()
+    else:
+        st.title(modulo_seleccionado)
+        st.write("Módulo en desarrollo...")
