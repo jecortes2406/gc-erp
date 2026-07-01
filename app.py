@@ -1,8 +1,9 @@
 import streamlit as st
+from database_manager import init_db
 from modulo_inventario import render_modulo_inventario
-def run():
-    st.markdown("## 🏢 GESTIÓN DE INVENTARIO")
-    
+
+# Inicializamos la base de datos solo una vez al arrancar
+init_db()    
     # Usamos la clase .card-white definida en tu app.py
     with st.container():
         st.markdown('<div class="card-white">', unsafe_allow_html=True)
