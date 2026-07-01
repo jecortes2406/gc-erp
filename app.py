@@ -117,7 +117,7 @@ st.sidebar.markdown("---")
 
 st.sidebar.markdown("### 🔄 CONTROL CAMBIARIO")
 
-# Botón nativo de actualización forzada
+# 1. BOTÓN DE AUTOMATIZACIÓN (MANTENEMOS LA FUNCIÓN)
 if st.sidebar.button("🔄 Actualizar Tasas BCV", use_container_width=True):
     st.cache_data.clear()
     tasa_usd_bcv, tasa_eur_bcv = obtener_tasas_bcv_reales()
@@ -125,26 +125,27 @@ if st.sidebar.button("🔄 Actualizar Tasas BCV", use_container_width=True):
     st.session_state.tasa_bcb_eur = tasa_eur_bcv
     st.rerun()
 
-st.sidebar.markdown(" ")
+st.sidebar.markdown("---")
+st.sidebar.write("📌 Edición Manual:")
 
-# Lista vertical usando bloques nativos de alta estabilidad
-st.sidebar.info(f"*💵 BCV USD:* \nBs. {st.session_state.tasa_bcb_usd:.2f}")
-st.sidebar.info(f"*💶 BCV EUR:* \nBs. {st.session_state.tasa_bcb_eur:.2f}")
-
-# Entrada manual de Binance
-nueva_tasa = st.sidebar.number_input(
-    "Tasa Binance P2P (Manual):", 
-    min_value=0.0, 
-    value=st.session_state.tasa_binance, 
-    step=0.1
+# 2. EDICIÓN MANUAL (ANEXAMOS ESTA NUEVA FUNCIÓN)
+st.session_state.tasa_bcb_usd = st.sidebar.number_input(
+    "💵 BCV USD (Manual):", value=st.session_state.tasa_bcb_usd, format="%.2f"
 )
-if nueva_tasa != st.session_state.tasa_binance:
-    st.session_state.tasa_binance = nueva_tasa
-    st.rerun()
+st.session_state.tasa_bcb_eur = st.sidebar.number_input(
+    "💶 BCV EUR (Manual):", value=st.session_state.tasa_bcb_eur, format="%.2f"
+)
 
+st.session_state.tasa_binance = st.sidebar.number_input(
+    "💎 Tasa Binance P2P (Manual):", 
+    value=st.session_state.tasa_binance, 
+    step=0.1,
+    format="%.2f"
+)
+
+st.session_state.referencia_master = st.session_state.tasa_binance
 st.sidebar.warning(f"*REFERENCIA MASTER:* \nBs. {st.session_state.referencia_master:.2f}")
 st.sidebar.markdown("---")
-
 # Menú de Operaciones
 modulos = [
     "📊 Panel Principal / Dashboard", "📦 Órdenes Online", "🧾 Crear Factura (POS)", 
