@@ -21,9 +21,3 @@ def render_modulo_contable():
             }])
             
             # 1. Actualizas la memoria
-            st.session_state.db_contable = pd.concat([st.session_state.db_contable, nuevo_registro], ignore_index=True)
-            
-            # 2. GUARDAS EN DISCO (Esto es lo que evita que se borre)
-            save_data('db_contable') 
-            
-            st.success("¡Movimiento guardado permanentemente!")
