@@ -6,10 +6,21 @@ def render_modulo_pos():
     st.markdown("## 🧾 PUNTO DE VENTA (POS)")
     df = init_db()
     
-    if df.empty:
-        st.warning("No hay productos en inventario. Registra productos primero.")
-        return
+    from database_manager import init_db
 
+def render_modulo_pos():
+    st.markdown("## 🧾 PUNTO DE VENTA (POS)")
+    
+    # 1. Obtenemos el dataframe de forma segura
+    df = init_db()
+    
+    # 2. Validamos antes de usarlo
+    if df is not None and not df.empty:
+        st.write("Inventario listo para venta:")
+        st.dataframe(df)
+        # Aquí continúa tu lógica de POS...
+    else:
+        st.warning("⚠️ El inventario está vacío. Por favor, registra productos en el módulo de Inventario.")
     # Selección de producto
     producto_seleccionado = st.selectbox("Seleccionar Producto", df['Producto'].tolist())
     prod_data = df[df['Producto'] == producto_seleccionado].iloc[0]
