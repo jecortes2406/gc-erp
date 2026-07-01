@@ -1,4 +1,11 @@
-T, sku TEXT, costo_usd REAL, 
+import sqlite3
+
+def init_db():
+    conn = sqlite3.connect('gc_erp.db')
+    c = conn.cursor()
+    c.execute('''CREATE TABLE IF NOT EXISTS productos 
+                 (id INTEGER PRIMARY KEY AUTOINCREMENT, 
+                  nombre TEXT, sku TEXT, costo_usd REAL, 
                   precio_detal REAL, precio_mayor REAL, stock INTEGER)''')
     conn.commit()
     conn.close()
@@ -18,10 +25,3 @@ def obtener_todos_productos():
     data = c.fetchall()
     conn.close()
     return data
-
-def actualizar_stock(producto_id, cantidad_vendida):
-    conn = sqlite3.connect('gc_erp.db')
-    c = conn.cursor()
-    c.execute("UPDATE productos SET stock = stock - ? WHERE id = ?", (cantidad_vendida, producto_id))
-    conn.commit()
-    conn.close()
