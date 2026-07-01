@@ -1,38 +1,22 @@
 import streamlit as st
 
-def mostrar_formulario_inventario():
-    st.title("🏢 GESTIÓN DE INVENTARIO MAESTRO")
+def run():
+    st.markdown("## 🏢 GESTIÓN DE INVENTARIO")
     
-    # Métricas Dashboard
-    c1, c2, c3, c4 = st.columns(4)
-    c1.metric("Valor Venta", "$432.00"); c2.metric("Stock Bajo", "0")
-    c3.metric("Unidades", "840"); c4.metric("Inversión", "$345.60")
-    
-    st.markdown("---")
-    
-    # Contenedor estilo tarjeta blanca
+    # Usamos la clase .card-white definida en tu app.py
     with st.container():
-        st.subheader("📝 Carga de Producto")
+        st.markdown('<div class="card-white">', unsafe_allow_html=True)
+        st.subheader("📝 NUEVO PRODUCTO")
         
-        # Identidad
-        cols1 = st.columns([2, 2, 1])
-        sku = cols1[0].text_input("Código SKU")
-        nom = cols1[1].text_input("Nombre del Producto")
-        venc = cols1[2].date_input("Vencimiento")
+        c1, c2 = st.columns(2)
+        sku = c1.text_input("Código SKU")
+        nombre = c2.text_input("Nombre del Producto")
         
-        # Estructura de Costos
-        st.subheader("💰 Estructura de Costos")
-        cols2 = st.columns(3)
-        costo = cols2[0].number_input("Costo Base ($)")
-        moneda = cols2[1].selectbox("Moneda", ["USDT", "Bolívares", "Euros"])
-        comision = cols2[2].number_input("Comisión (%)")
+        c3, c4, c5 = st.columns(3)
+        costo = c3.number_input("Costo (USD)")
+        precio_detal = c4.number_input("Precio Detal (USD)")
+        precio_mayor = c5.number_input("Precio Mayor (USD)")
         
-        # Márgenes
-        st.subheader("📊 Niveles de Venta (Márgenes)")
-        cols3 = st.columns(3)
-        md = cols3[0].number_input("Margen Detal (%)")
-        mb = cols3[1].number_input("Margen Bulto (%)")
-        mm = cols3[2].number_input("Margen Mayor (%)")
-        
-        if st.button("🚀 GUARDAR PRODUCTO", type="primary"):
-            st.success("Producto registrado en la base de datos.")
+        if st.button("🚀 GUARDAR EN BASE DE DATOS", type="primary"):
+            st.success("Producto registrado anclado a Binance.")
+        st.markdown('</div>', unsafe_allow_html=True)
