@@ -1,11 +1,24 @@
 import streamlit as st
 import pandas as pd
+import os
+
+FILES = {
+    'db_inventario': 'data_inventario.csv',
+    'db_ventas': 'data_ventas.csv',
+    'db_contable': 'data_contable.csv'
+}
 
 def init_db():
-    # Inicialización de tablas si no existen
-    if 'db_inventario' not in st.session_state:
-        st.session_state.db_inventario = pd.DataFrame(columns=['Código', 'Producto', 'Costo USD', 'Precio Venta'])
-    if 'db_ventas' not in st.session_state:
-        st.session_state.db_ventas = pd.DataFrame(columns=['Producto', 'Cantidad', 'Total'])
-    if 'db_contable' not in st.session_state:
-        st.session_state.db_contable = pd.DataFrame(columns=['Fecha', 'Concepto', 'Monto', 'Tipo'])
+    for key, filename in FILES.items():
+        if key not in st.session_state:
+            if os.path.exists(filename):
+                st.session_state[key] = pd.read_csv(filename)
+            else:
+                # Si el archivo no existe, creamos un DataFrame vacío
+                st.session_state[key] = pd.DataFrame() 
+                st.session_state[key].to_csv(filename, index=False)
+
+def save_data(key):
+    """Guarda el DataFrame actual en el archivo CSV correspondiente."""
+    if key in st.session_state:
+        st.session_state[key].to_csv(FILES[key], index=False)
