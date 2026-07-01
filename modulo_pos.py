@@ -1,34 +1,44 @@
 import streamlit as st
 import pandas as pd
+from database_manager import init_db
 
-def render_pos():
-    st.markdown("## 🧾 SISTEMA DE FACTURACIÓN (POS)")
+def render_modulo_pos():
+    st.markdown("## 🧾 PUNTO DE VENTA (POS)")
+    df = init_db()
     
-    # 1. Selección de Cliente
-    col1, col2 = st.columns([2, 1])
-    cliente = col1.selectbox("Seleccionar Cliente", ["Cliente Genérico (Venta Rápida)", "+ Crear Nuevo Cliente"])
-    
-    # 2. Carrito de Ventas (Aquí usaremos la matriz de inventario)
-    if 'carrito' not in st.session_state:
-        st.session_state.carrito = []
+    if df.empty:
+        st.warning("No hay productos en inventario. Registra productos primero.")
+        return
 
-    # 3. Lógica de Pago con Conciliación Bancaria
-    with st.expander("💳 Finalizar Venta / Cierre"):
-        metodo = st.radio("Método de Pago", ["Efectivo USD", "Zelle", "Transferencia", "Punto/Débito"])
+    # Selección de producto
+    producto_seleccionado = st.selectbox("Seleccionar Producto", df['Producto'].tolist())
+    prod_data = df[df['Producto'] == producto_seleccionado].iloc[0]
+    
+    st.write(f"Precio Detal: {prod_data['Precio Venta (Bs)']} Bs.")
+    
+    cantidad = st.number_input("Cantidad a vender", min_value=1, value=1)
+    vendedor = st.text_input("Nombre del Vendedor")
+    
+    if st.button("🛒 PROCESAR VENTA"):
+        total_venta = cantidad * prod_data['Precio Venta (Bs)']
+        comision = total_venta * (prod_data['Comisión %'] / 100)
         
-        if metodo == "Transferencia":
-            c_ref1, c_ref2 = st.columns(2)
-            ref_bancaria = c_ref1.text_input("4 últimos dígitos de Referencia", max_chars=4)
-            monto_transfer = c_ref2.number_input("Monto Recibido", min_value=0.0)
+        # Guardar venta en base de datos de ventas (persistente)
+        if 'db_ventas' not in st.session_state:
+            st.session_state.db_ventas = pd.DataFrame()
             
-            # Validación: No permite procesar sin los datos
-            if len(ref_bancaria) < 4:
-                st.warning("⚠️ Debe ingresar los 4 dígitos de la referencia.")
-                
-    # 4. Botón de Procesar (Aquí calcularemos la comisión del vendedor)
-    if st.button("🚀 PROCESAR VENTA"):
-        # Lógica: 
-        # A. Restar stock en Inventario
-        # B. Calcular comisión = Precio_Venta * (Comision_Pct / 100)
-        # C. Guardar en Historial
-        st.success("Venta procesada con éxito.")
+        nueva_venta = pd.DataFrame([{
+            'Producto': producto_seleccionado,
+            'Cantidad': cantidad,
+            'Total Bs': total_venta,
+            'Comisión': comision,
+            'Vendedor': vendedor
+        }])
+        
+        st.session_state.db_ventas = pd.concat([st.session_state.db_ventas, nueva_venta], ignore_index=True)
+        st.success(f"Venta registrada. Comisión asignada: {comision:.2f} Bs.")
+
+    # Mostrar historial de ventas
+    if 'db_ventas' in st.session_state:
+        st.subheader("📋 Historial de Ventas")
+        st.dataframe(st.session_state.db_ventas, use_container_width=True)
