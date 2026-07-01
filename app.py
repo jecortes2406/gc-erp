@@ -20,7 +20,7 @@ def run():
         if st.button("🚀 GUARDAR EN BASE DE DATOS", type="primary"):
             st.success("Producto registrado anclado a Binance.")
         st.markdown('</div>', unsafe_allow_html=True)
-[8:17 p. m., 30/6/2026] ...: import streamlit as st
+import streamlit as st
 import pandas as pd
 import urllib.request
 import json
