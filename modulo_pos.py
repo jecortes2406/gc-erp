@@ -1,55 +1,16 @@
 import streamlit as st
-import pandas as pd
-from database_manager import init_db
-
-def render_modulo_pos():
-    st.markdown("## 🧾 PUNTO DE VENTA (POS)")
-    df = init_db()
-    
-    from database_manager import init_db
+from database_manager import init_db, save_data
 
 def render_modulo_pos():
     st.markdown("## 🧾 PUNTO DE VENTA (POS)")
     
-    # 1. Obtenemos el dataframe de forma segura
-    df = init_db()
+    # 1. Cargar datos
+    init_db()
     
-    # 2. Validamos antes de usarlo
-    if df is not None and not df.empty:
-        st.write("Inventario listo para venta:")
-        st.dataframe(df)
-        # Aquí continúa tu lógica de POS...
+    # 2. Validar que existan datos antes de operar
+    if 'db_inventario' in st.session_state and not st.session_state.db_inventario.empty:
+        # Aquí va la lógica de ventas
+        producto = st.selectbox("Seleccionar Producto", st.session_state.db_inventario['Producto'])
+        # ... lógica de venta ...
     else:
-        st.warning("⚠️ El inventario está vacío. Por favor, registra productos en el módulo de Inventario.")
-    # Selección de producto
-    producto_seleccionado = st.selectbox("Seleccionar Producto", df['Producto'].tolist())
-    prod_data = df[df['Producto'] == producto_seleccionado].iloc[0]
-    
-    st.write(f"Precio Detal: {prod_data['Precio Venta (Bs)']} Bs.")
-    
-    cantidad = st.number_input("Cantidad a vender", min_value=1, value=1)
-    vendedor = st.text_input("Nombre del Vendedor")
-    
-    if st.button("🛒 PROCESAR VENTA"):
-        total_venta = cantidad * prod_data['Precio Venta (Bs)']
-        comision = total_venta * (prod_data['Comisión %'] / 100)
-        
-        # Guardar venta en base de datos de ventas (persistente)
-        if 'db_ventas' not in st.session_state:
-            st.session_state.db_ventas = pd.DataFrame()
-            
-        nueva_venta = pd.DataFrame([{
-            'Producto': producto_seleccionado,
-            'Cantidad': cantidad,
-            'Total Bs': total_venta,
-            'Comisión': comision,
-            'Vendedor': vendedor
-        }])
-        
-        st.session_state.db_ventas = pd.concat([st.session_state.db_ventas, nueva_venta], ignore_index=True)
-        st.success(f"Venta registrada. Comisión asignada: {comision:.2f} Bs.")
-
-    # Mostrar historial de ventas
-    if 'db_ventas' in st.session_state:
-        st.subheader("📋 Historial de Ventas")
-        st.dataframe(st.session_state.db_ventas, use_container_width=True)
+        st.warning("⚠️ El inventario está vacío. Registra productos primero.")
