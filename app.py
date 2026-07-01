@@ -3,6 +3,9 @@ from database_manager import init_db
 from modulo_inventario import render_modulo_inventario
 
 # Inicializamos la base de datos solo una vez al arrancar
+init_db()
+
+# Inicializamos la base de datos solo una vez al arrancar
 init_db()    
     # Usamos la clase .card-white definida en tu app.py
     with st.container():
