@@ -3,45 +3,56 @@ import pandas as pd
 from datetime import datetime
 
 def render_modulo_inventario():
-    # Inicialización del estado de inventario (Memoria temporal robusta)
+    # 1. Inicialización Robusta
     if 'inventario' not in st.session_state:
         st.session_state.inventario = pd.DataFrame(columns=[
             'Fecha', 'Código', 'Producto', 'Categoría', 'Unidad', 
-            'Costo USD', 'Margen %', 'Stock', 'Comision_Pct', 'Precio Venta Bs'
+            'Costo USD', 'Margen %', 'Precio Venta USD', 'Precio Venta Bs', 
+            'Stock', 'Comision_Pct', 'Comision_Valor_USD'
         ])
     
-    tasa_master = st.session_state.get('referencia_master', 46.50)
+    tasa_master = st.session_state.get('referencia_master', 765.00) # Usando tu tasa actual
     
     st.markdown("## 📦 GESTIÓN DE INVENTARIO")
     
-    # Bloque de Registro
-    with st.container():
-        st.subheader("📝 NUEVO PRODUCTO (Blindado)")
-        with st.form("form_inventario", clear_on_submit=True):
-            col1, col2, col3 = st.columns(3)
-            sku = col1.text_input("Código SKU")
-            nombre = col2.text_input("Nombre del Producto")
-            categoria = col3.selectbox("Categoría", ["General", "Electrónica", "Servicios", "Alimentos"])
+    # 2. Formulario con todos los campos del Excel
+    with st.expander("📝 REGISTRO DETALLADO DE PRODUCTO", expanded=True):
+        with st.form("form_inventario_completo", clear_on_submit=True):
+            c1, c2, c3 = st.columns(3)
+            sku = c1.text_input("Código SKU")
+            nombre = c2.text_input("Nombre del Producto")
+            categoria = c3.selectbox("Categoría", ["General", "Electrónica", "Servicios", "Alimentos"])
             
-            col4, col5, col6, col7 = st.columns(4)
-            costo_usd = col4.number_input("Costo USD", min_value=0.0, format="%.2f")
-            margen = col5.number_input("Margen %", value=30.0)
-            stock = col6.number_input("Stock Inicial", min_value=0)
-            unidad = col7.selectbox("Unidad", ["Uni", "Caja", "Kilo", "Bulto"])
+            c4, c5, c6 = st.columns(3)
+            costo = c4.number_input("Costo de Compra (USD)", min_value=0.0, format="%.2f")
+            margen = c5.number_input("Margen de Utilidad (%)", min_value=0.0, value=30.0)
+            stock = c6.number_input("Stock Inicial", min_value=0)
             
-            comision = st.number_input("Comisión Vendedor (%)", min_value=0.0, max_value=100.0, value=5.0)
+            c7, c8 = st.columns(2)
+            unidad = c7.selectbox("Unidad de Medida", ["Uni", "Caja", "Litros", "Kilos", "Bultos"])
+            comision_pct = c8.number_input("Ganancia Vendedor (%)", min_value=0.0, max_value=100.0, value=2.0)
             
-            if st.form_submit_button("🚀 GUARDAR Y BLINDAR"):
-                precio_venta = (costo_usd * (1 + (margen/100))) * tasa_master
-                nuevo_reg = pd.DataFrame([{
+            if st.form_submit_button("🚀 GUARDAR Y CALCULAR"):
+                # --- MOTOR DE CÁLCULO BLINDADO ---
+                precio_usd = costo * (1 + (margen / 100))
+                precio_bs = precio_usd * tasa_master
+                valor_comision = precio_usd * (comision_pct / 100)
+                
+                nuevo = pd.DataFrame([{
                     'Fecha': datetime.now().strftime("%Y-%m-%d"), 'Código': sku, 
                     'Producto': nombre, 'Categoría': categoria, 'Unidad': unidad, 
-                    'Costo USD': costo_usd, 'Margen %': margen, 'Stock': stock, 
-                    'Comision_Pct': comision, 'Precio Venta Bs': precio_venta
+                    'Costo USD': costo, 'Margen %': margen, 'Precio Venta USD': precio_usd,
+                    'Precio Venta Bs': precio_bs, 'Stock': stock, 
+                    'Comision_Pct': comision_pct, 'Comision_Valor_USD': valor_comision
                 }])
-                st.session_state.inventario = pd.concat([st.session_state.inventario, nuevo_reg], ignore_index=True)
-                st.success("Producto registrado exitosamente.")
+                st.session_state.inventario = pd.concat([st.session_state.inventario, nuevo], ignore_index=True)
+                st.success(f"Producto {nombre} registrado. Precio sugerido: ${precio_usd:.2f}")
 
-    # Matriz de Visualización
+    # 3. Matriz con Alertas visuales
     st.subheader("📋 MATRIZ DE INVENTARIO (BD)")
-    st.data_editor(st.session_state.inventario, use_container_width=True)
+    if not st.session_state.inventario.empty:
+        # Formateo para visualización
+        display_df = st.session_state.inventario.copy()
+        st.data_editor(display_df, use_container_width=True)
+    else:
+        st.info("La matriz está vacía.")
