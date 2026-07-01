@@ -96,8 +96,16 @@ modulo_seleccionado = st.sidebar.radio("MENÚ DE OPERACIONES:", modulos)
 # =====================================================================
 # 5. LÓGICA DE NAVEGACIÓN
 # =====================================================================
-if modulo_seleccionado == "📊 Panel Principal / Dashboard":
-    st.markdown('<p class="welcome-title">¡Buenos días, jecortes!</p>', unsafe_allow_html=True)
-    # ... (Aquí puedes mantener tu layout de dashboard existente)
+# --- LÓGICA DE NAVEGACIÓN ---
+# Asegúrate de que este bloque esté al final de tu archivo app.py
+if modulo_seleccionado == "🧾 Crear Factura (POS)":
+    import modulo_pos
+    modulo_pos.render_modulo_pos()
 
-elif modulo_seleccionado == "
+elif modulo_seleccionado == "🗂️ Gestión / Inventario":
+    # Llamamos a la función que importaste al inicio
+    render_modulo_inventario()
+
+else:
+    st.title("GC Grupo Comercial C.A.")
+    st.info("Seleccione una opción en el menú lateral para comenzar.")
