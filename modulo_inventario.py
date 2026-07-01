@@ -2,48 +2,53 @@ import streamlit as st
 import pandas as pd
 
 def render_modulo_inventario():
-    st.markdown("## 🗂️ GESTIÓN DE INVENTARIO - REPLICA EXCEL")
+    st.markdown("## 📦 GESTIÓN DE INVENTARIO - MÓDULO MAESTRO")
     
-    # 1. DEFINICIÓN DE ESTRUCTURA (Columnas de tu Excel)
+    # 1. Definición de la Matriz Maestra con todas las columnas
     columnas = [
-        'Código', 'Producto', 'Vencimiento', 'Cant x Bulto', 'Stock', 
-        'Costo', 'Margen %', 'Precio Detal', 'Precio Bulto', 'Alerta'
+        'Código', 'Producto', 'Categoría', 'Vencimiento', 'Cant x Bulto', 
+        'Stock', 'Alerta', 'Costo', 'Moneda', 'Precio Detal', 
+        'Precio Bulto', 'Precio Mayor'
     ]
     
-    # Inicialización de la tabla con tus columnas
-    if 'inventario_total' not in st.session_state:
-        st.session_state.inventario_total = pd.DataFrame(columns=columnas)
+    if 'df_inventario' not in st.session_state:
+        st.session_state.df_inventario = pd.DataFrame(columns=columnas)
     
-    # 2. FORMULARIO DE ENTRADA (Captura todos los campos)
-    with st.form("form_replicar_excel"):
+    # 2. Formulario de Registro con todos los campos
+    with st.form("registro_maestro", clear_on_submit=True):
         c1, c2, c3 = st.columns(3)
         codigo = c1.text_input("Código")
         producto = c2.text_input("Producto")
-        vencimiento = c3.date_input("Fecha Vencimiento")
+        categoria = c3.selectbox("Categoría", ["Víveres", "Tabacos", "Hogar", "Otros"])
         
         c4, c5, c6 = st.columns(3)
-        bulto = c4.number_input("Cantidad x Bulto", value=1)
-        stock = c5.number_input("Stock", value=0)
-        costo = c6.number_input("Costo", format="%.2f")
+        vencimiento = c4.date_input("Fecha Vencimiento")
+        cant_bulto = c5.number_input("Cant x Bulto", value=1)
+        stock = c6.number_input("Stock", value=0)
         
-        margen = st.number_input("Margen (%)", value=30.0)
+        c7, c8, c9 = st.columns(3)
+        costo = c7.number_input("Costo", format="%.2f")
+        moneda = c8.selectbox("Moneda", ["BS", "EU", "USDT"])
+        margen = c9.number_input("Margen (%)", value=30.0)
         
         if st.form_submit_button("💾 REGISTRAR PRODUCTO"):
-            # Lógica de cálculo replicando tu Excel
+            # Lógica de precios
             p_detal = costo * (1 + (margen/100))
-            p_bulto = p_detal * 0.9 # Ejemplo: 10% descuento por bulto
-            alerta = "⚠️ BAJO" if stock < 5 else "✅ OK"
+            alerta = "⚠️ STOP BAJO" if stock < 5 else "✅ OK"
             
             nuevo = pd.DataFrame([{
-                'Código': codigo, 'Producto': producto, 'Vencimiento': vencimiento,
-                'Cant x Bulto': bulto, 'Stock': stock, 'Costo': costo,
-                'Margen %': margen, 'Precio Detal': p_detal, 
-                'Precio Bulto': p_bulto, 'Alerta': alerta
+                'Código': codigo, 'Producto': producto, 'Categoría': categoria,
+                'Vencimiento': vencimiento, 'Cant x Bulto': cant_bulto, 'Stock': stock,
+                'Alerta': alerta, 'Costo': costo, 'Moneda': moneda,
+                'Precio Detal': p_detal, 'Precio Bulto': p_detal*0.9, 
+                'Precio Mayor': p_detal*0.85
             }])
             
-            st.session_state.inventario_total = pd.concat([st.session_state.inventario_total, nuevo], ignore_index=True)
-            st.rerun()
+            st.session_state.df_inventario = pd.concat([st.session_state.df_inventario, nuevo], ignore_index=True)
+            st.success("Producto registrado con éxito.")
 
-    # 3. VISUALIZACIÓN DE LA MATRIZ (Aquí verás TODO tu Excel)
-    st.subheader("📋 MATRIZ DE INVENTARIO COMPLETA")
-    st.dataframe(st.session_state.inventario_total, use_container_width=True)
+    # 3. Visualización de la Matriz Completa
+    st.subheader("📋 MATRIZ DE INVENTARIO (ESPEJO EXCEL)")
+    st.dataframe(st.session_state.df_inventario, use_container_width=True)
+    
+    # Próximo paso: incluir botones de acción (Editar/Borrar) en cada fila
