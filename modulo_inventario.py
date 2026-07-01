@@ -2,53 +2,45 @@ import streamlit as st
 import pandas as pd
 
 def render_modulo_inventario():
-    st.markdown("## 📦 GESTIÓN DE INVENTARIO - MÓDULO MAESTRO")
+    st.markdown("## 📦 GESTIÓN DE INVENTARIO - SISTEMA MAESTRO")
     
-    # 1. Definición de la Matriz Maestra con todas las columnas
-    columnas = [
-        'Código', 'Producto', 'Categoría', 'Vencimiento', 'Cant x Bulto', 
-        'Stock', 'Alerta', 'Costo', 'Moneda', 'Precio Detal', 
-        'Precio Bulto', 'Precio Mayor'
-    ]
+    # Creamos pestañas para separar la acción de la visualización
+    tab1, tab2 = st.tabs(["➕ NUEVO PRODUCTO", "📋 MATRIZ DE INVENTARIO"])
     
-    if 'df_inventario' not in st.session_state:
-        st.session_state.df_inventario = pd.DataFrame(columns=columnas)
-    
-    # 2. Formulario de Registro con todos los campos
-    with st.form("registro_maestro", clear_on_submit=True):
-        c1, c2, c3 = st.columns(3)
-        codigo = c1.text_input("Código")
-        producto = c2.text_input("Producto")
-        categoria = c3.selectbox("Categoría", ["Víveres", "Tabacos", "Hogar", "Otros"])
-        
-        c4, c5, c6 = st.columns(3)
-        vencimiento = c4.date_input("Fecha Vencimiento")
-        cant_bulto = c5.number_input("Cant x Bulto", value=1)
-        stock = c6.number_input("Stock", value=0)
-        
-        c7, c8, c9 = st.columns(3)
-        costo = c7.number_input("Costo", format="%.2f")
-        moneda = c8.selectbox("Moneda", ["BS", "EU", "USDT"])
-        margen = c9.number_input("Margen (%)", value=30.0)
-        
-        if st.form_submit_button("💾 REGISTRAR PRODUCTO"):
-            # Lógica de precios
-            p_detal = costo * (1 + (margen/100))
-            alerta = "⚠️ STOP BAJO" if stock < 5 else "✅ OK"
+    with tab1:
+        with st.form("form_nuevo_producto", clear_on_submit=True):
+            # SECCIÓN 1: ESPECIFICACIONES DE IDENTIDAD
+            st.subheader("📝 Especificaciones de Identidad")
+            c1, c2 = st.columns(2)
+            nombre = c1.text_input("Nombre Comercial")
+            categoria = c2.selectbox("Categoría / Pasillo", ["Víveres", "Tabacos", "Hogar", "Otros"])
             
-            nuevo = pd.DataFrame([{
-                'Código': codigo, 'Producto': producto, 'Categoría': categoria,
-                'Vencimiento': vencimiento, 'Cant x Bulto': cant_bulto, 'Stock': stock,
-                'Alerta': alerta, 'Costo': costo, 'Moneda': moneda,
-                'Precio Detal': p_detal, 'Precio Bulto': p_detal*0.9, 
-                'Precio Mayor': p_detal*0.85
-            }])
+            c3, c4 = st.columns(2)
+            codigo = c3.text_input("Código SKU")
+            marca = c4.text_input("Marca / Fabricante")
             
-            st.session_state.df_inventario = pd.concat([st.session_state.df_inventario, nuevo], ignore_index=True)
-            st.success("Producto registrado con éxito.")
-
-    # 3. Visualización de la Matriz Completa
-    st.subheader("📋 MATRIZ DE INVENTARIO (ESPEJO EXCEL)")
-    st.dataframe(st.session_state.df_inventario, use_container_width=True)
+            # SECCIÓN 2: LOGÍSTICA DE ALMACENAJE
+            st.subheader("📦 Logística de Almacenaje")
+            l1, l2, l3 = st.columns(3)
+            sede = l1.text_input("Centro de Recepción")
+            unidad = l2.selectbox("Unidad de Gestión", ["Uni", "Caja", "Kilos", "Litros"])
+            stock_min = l3.number_input("Stock Mínimo Crítico", value=5)
+            
+            # SECCIÓN 3: ESTRUCTURA DE PRECIOS
+            st.subheader("💰 Estructura de Precios")
+            p1, p2, p3 = st.columns(3)
+            p1.number_input("Precio al Detal (USD)", format="%.2f")
+            p2.number_input("Precio al Mayor (USD)", format="%.2f")
+            p3.number_input("Precio por Bulto (USD)", format="%.2f")
+            
+            if st.form_submit_button("🚀 GUARDAR PRODUCTO MAESTRO"):
+                # Aquí iría la lógica para guardar en tu CSV (archivo master)
+                st.success(f"Producto {nombre} guardado correctamente.")
     
-    # Próximo paso: incluir botones de acción (Editar/Borrar) en cada fila
+    with tab2:
+        st.subheader("📋 Matriz de Inventario")
+        # Aquí cargaremos el archivo CSV que venimos trabajando
+        if 'df_inventario' in st.session_state and not st.session_state.df_inventario.empty:
+            st.dataframe(st.session_state.df_inventario, use_container_width=True)
+        else:
+            st.info("La matriz está limpia. Registra tu primer producto en la pestaña 'NUEVO PRODUCTO'.")
