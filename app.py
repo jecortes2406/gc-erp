@@ -100,4 +100,4 @@ if modulo_seleccionado == "📊 Panel Principal / Dashboard":
     st.markdown('<p class="welcome-title">¡Buenos días, jecortes!</p>', unsafe_allow_html=True)
     # ... (Aquí puedes mantener tu layout de dashboard existente)
 
-elif modulo_seleccionado == "
+elif modulo_seleccionado == ")
